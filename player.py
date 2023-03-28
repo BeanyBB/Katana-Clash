@@ -8,9 +8,14 @@ class Player:
         self.weapon = weapon
         self.avatar = avatar
         self.name = name
+        self.last_action = 'still'
+        self.counter = 0
 
     def show_player(self):
-        pygame.draw.circle(self.screen, self.color, self.player_pos, 40)
+        self.image = pygame.image.load(self.avatar)
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = [self.player_pos.x, self.player_pos.y]
+        self.screen.blit(self.image, self.rect)
 
     def attack(self):
         print(f'{self.name} attacking')
@@ -22,14 +27,59 @@ class Player:
         print(f'{self.name} jumping')
 
     def move_left(self, dt):
-        self.player_pos.x -= 300 * dt
-        print(f'{self.name} moving left')
+        self.player_pos.x -= 330 * dt
 
     def move_right(self, dt):
-        print(self.player_pos)
-        self.player_pos.x += 300 * dt
-        print(f'{self.name} moving right')
-        print(self.player_pos)
+        self.player_pos.x += 330 * dt
 
     def special_attack(self):
         print(f'{self.name} doing special attack')
+
+    def update_image(self, image):
+        self.avatar = image
+
+    def run_right(self):
+        if self.last_action == "running-right":
+            print(self.counter)
+            if 0 < self.counter < 7.5:
+                self.update_image("images/runAnimation/run1.png")
+            elif 7.5 <= self.counter < 15:
+                self.update_image("images/runAnimation/run2.png")
+            elif 15 <= self.counter < 22.5:
+                self.update_image("images/runAnimation/run3.png")
+            elif 22.5 <= self.counter < 30:
+                self.update_image("images/runAnimation/run4.png")
+            elif 30 <= self.counter < 37.5:
+                self.update_image("images/runAnimation/run5.png")
+            elif 37.5 <= self.counter < 45:
+                self.update_image("images/runAnimation/run6.png")
+            elif 45 <= self.counter < 52.5:
+                self.update_image("images/runAnimation/run7.png")
+            else:
+                self.update_image("images/runAnimation/run8.png")
+                self.counter = 0
+        else:
+            self.counter = 0
+
+    def run_left(self):
+        if self.last_action == "running-left":
+            print(self.counter)
+            if 0 < self.counter < 7.5:
+                self.update_image("images/runAnimation/run1rev.png")
+            elif 7.5 <= self.counter < 15:
+                self.update_image("images/runAnimation/run2rev.png")
+            elif 15 <= self.counter < 22.5:
+                self.update_image("images/runAnimation/run3rev.png")
+            elif 22.5 <= self.counter < 30:
+                self.update_image("images/runAnimation/run4rev.png")
+            elif 30 <= self.counter < 37.5:
+                self.update_image("images/runAnimation/run5rev.png")
+            elif 37.5 <= self.counter < 45:
+                self.update_image("images/runAnimation/run6rev.png")
+            elif 45 <= self.counter < 52.5:
+                self.update_image("images/runAnimation/run7rev.png")
+            else:
+                self.update_image("images/runAnimation/run8rev.png")
+                self.counter = 0
+        else:
+            self.counter = 0
