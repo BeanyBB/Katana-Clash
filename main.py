@@ -54,8 +54,8 @@ def game_loop(screen, clock, running, dt):
 
     all_players = (player1, player2)
 
-    bg = Background("images/background.jpg", [0,0])
-    ground = Background("images/ground.png", [0,230])
+    bg = Background("images/background.png", [0,0])
+    #ground = Background("images/ground.png", [0,230])
 
     white = (255, 255, 255)
     green = (0, 255, 0)
@@ -68,7 +68,7 @@ def game_loop(screen, clock, running, dt):
         if game_on:
             screen.fill([255, 255, 255])
             screen.blit(bg.image, bg.rect)
-            screen.blit(ground.image, ground.rect)
+            #screen.blit(ground.image, ground.rect)
 
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
