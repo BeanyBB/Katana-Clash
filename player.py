@@ -1,7 +1,7 @@
 import pygame
 
 class Player:
-    def __init__(self, weapon, folder, name, screen, player_pos, color):
+    def __init__(self, weapon, folder, name, screen, player_pos, color, origin):
         self.color = color
         self.folder = folder
         self.player_pos = player_pos
@@ -18,6 +18,9 @@ class Player:
         self.facing = 'right'
         self.attacking = False
         self.attack_count = 0
+        self.health = 100
+        self.damage = 10
+        self.origin = origin
 
     def show_player(self):
         self.image = pygame.image.load(self.avatar)
@@ -25,9 +28,18 @@ class Player:
         self.rect.left, self.rect.top = [self.player_pos.x, self.player_pos.y]
         self.screen.blit(self.image, self.rect)
 
-    def attack(self):
+    def attack(self, player):
         if self.attacking == False:
             self.attacking = True
+            self.check_hitbox(player)
+
+    def check_hitbox(self, player):
+        if self.rect.colliderect(player.rect):
+            if self.rect.x > player.rect.x and self.facing == 'left':
+                player.health -= self.damage
+            elif self.rect.x < player.rect.x and self.facing == 'right':
+                player.health -= self.damage
+
 
     def defend(self):
         print(f'{self.name} defending')
@@ -38,11 +50,13 @@ class Player:
 
     def move_left(self, dt):
         self.facing = 'left'
-        self.player_pos.x -= 400 * dt
+        if self.player_pos.x > 0:
+            self.player_pos.x -= 400 * dt
 
     def move_right(self, dt):
         self.facing = 'right'
-        self.player_pos.x += 400 * dt
+        if self.player_pos.x < 1215:
+            self.player_pos.x += 400 * dt
 
     def special_attack(self):
         print(f'{self.name} doing special attack')
