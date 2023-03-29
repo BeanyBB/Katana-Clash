@@ -9,6 +9,60 @@ class Background(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = location
 
+def check_player_jump(Player):
+    if Player.is_jump:
+        if Player.player_pos.y == 510 and Player.jump_count != 0:
+            Player.is_jump = False
+            Player.mass = 1
+            Player.vel = 15
+            Player.jump_count = 0
+        else:
+            Player.jump_count += 1
+            if Player.vel < 0:
+                Player.mass = -1
+            force = ((1/2) * Player.mass * Player.vel**2)*.4
+            Player.player_pos.y -= force
+            Player.vel = Player.vel - .5
+        do_jump_animation(Player)
+
+
+def do_jump_animation(Player):
+    if 13 <= Player.vel <= 15:
+        if Player.facing == 'right':
+            Player.update_image("images/jumpAnimation/jump1.png")
+        else:
+            Player.update_image("images/jumpAnimation/jump1rev.png")
+    elif 11 <= Player.vel <= 13:
+        if Player.facing == 'right':
+            Player.update_image("images/jumpAnimation/jump2.png")
+        else:
+            Player.update_image("images/jumpAnimation/jump2rev.png")
+    elif 0 <= Player.vel <= 11:
+        if Player.facing == 'right':
+            Player.update_image("images/jumpAnimation/jump4.png")
+        else:
+            Player.update_image("images/jumpAnimation/jump3rev.png")
+    elif -2 <= Player.vel <= 0:
+        if Player.facing == 'right':
+            Player.update_image("images/jumpAnimation/jump4.png")
+        else:
+            Player.update_image("images/jumpAnimation/jump4rev.png")
+    elif -12 <= Player.vel <= -2:
+        if Player.facing == 'right':
+            Player.update_image("images/jumpAnimation/jump5.png")
+        else:
+            Player.update_image("images/jumpAnimation/jump5rev.png")
+    elif -14 <= Player.vel <= -12:
+        if Player.facing == 'right':
+            Player.update_image("images/jumpAnimation/jump6.png")
+        else:
+            Player.update_image("images/jumpAnimation/jump6rev.png")
+    else:
+        if Player.facing == 'right':
+            Player.update_image("images/jumpAnimation/jump7.png")
+        else:
+            Player.update_image("images/jumpAnimation/jump7rev.png")
+
 
 def game_loop(screen, clock, running, dt):
     player1 = Player('sword', "images/default.png", 'player1', screen,
@@ -45,8 +99,13 @@ def game_loop(screen, clock, running, dt):
 
 
 
+
+
         player1.show_player()
         player2.show_player()
+
+        check_player_jump(player1)
+        check_player_jump(player2)
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]:
@@ -59,16 +118,21 @@ def game_loop(screen, clock, running, dt):
             player1.counter += 1
             player1.run_right()
             player1.move_right(dt)
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_l]:
             player2.last_action = "running-right"
             player2.counter += 1
             player2.run_right()
             player2.move_right(dt)
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_j]:
             player2.last_action = "running-left"
             player2.counter += 1
             player2.run_left()
             player2.move_left(dt)
+        if keys[pygame.K_w]:
+            player1.jump()
+        if keys[pygame.K_i]:
+            player2.jump()
+
 
         # flip() the display to put your work on screen
         pygame.display.flip()

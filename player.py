@@ -10,6 +10,11 @@ class Player:
         self.name = name
         self.last_action = 'still'
         self.counter = 0
+        self.is_jump = False
+        self.mass = 1
+        self.vel = 15
+        self.jump_count = 0
+        self.facing = 'right'
 
     def show_player(self):
         self.image = pygame.image.load(self.avatar)
@@ -24,13 +29,16 @@ class Player:
         print(f'{self.name} defending')
 
     def jump(self):
-        print(f'{self.name} jumping')
+        if self.is_jump == False:
+            self.is_jump = True
 
     def move_left(self, dt):
-        self.player_pos.x -= 330 * dt
+        self.facing = 'left'
+        self.player_pos.x -= 400 * dt
 
     def move_right(self, dt):
-        self.player_pos.x += 330 * dt
+        self.facing = 'right'
+        self.player_pos.x += 400 * dt
 
     def special_attack(self):
         print(f'{self.name} doing special attack')
@@ -39,8 +47,7 @@ class Player:
         self.avatar = image
 
     def run_right(self):
-        if self.last_action == "running-right":
-            print(self.counter)
+        if self.last_action == "running-right" and self.is_jump == False:
             if 0 < self.counter < 7.5:
                 self.update_image("images/runAnimation/run1.png")
             elif 7.5 <= self.counter < 15:
@@ -62,8 +69,7 @@ class Player:
             self.counter = 0
 
     def run_left(self):
-        if self.last_action == "running-left":
-            print(self.counter)
+        if self.last_action == "running-left" and self.is_jump == False:
             if 0 < self.counter < 7.5:
                 self.update_image("images/runAnimation/run1rev.png")
             elif 7.5 <= self.counter < 15:
