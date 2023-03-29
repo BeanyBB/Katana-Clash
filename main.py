@@ -26,25 +26,6 @@ def check_player_jump(Player):
             Player.vel = Player.vel - .5
         Player.do_jump_animation()
 
-def check_player_attack(Player):
-    if Player.attacking:
-        Player.attack_count += 1
-        if Player.attack_count < 15:
-            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/attack/attack1.png")
-            else: Player.update_image(f"images/{Player.folder}/attack/attack1rev.png")
-        elif Player.attack_count <= 30:
-            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/attack/attack2.png")
-            else: Player.update_image(f"images/{Player.folder}/attack/attack2rev.png")
-        elif Player.attack_count <= 45:
-            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/attack/attack3.png")
-            else: Player.update_image(f"images/{Player.folder}/attack/attack3rev.png")
-        else:
-            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/default.png")
-            else: Player.update_image(f"images/{Player.folder}/reverse.png")
-            Player.attacking = False
-            Player.attack_count = 0
-
-
 
 def game_loop(screen, clock, running, dt):
     player1 = Player('sword', "commander", 'player1', screen,
@@ -55,7 +36,7 @@ def game_loop(screen, clock, running, dt):
     all_players = (player1, player2)
 
     bg = Background("images/background.png", [0,0])
-    #ground = Background("images/ground.png", [0,230])
+
 
     white = (255, 255, 255)
     green = (0, 255, 0)
@@ -68,7 +49,6 @@ def game_loop(screen, clock, running, dt):
         if game_on:
             screen.fill([255, 255, 255])
             screen.blit(bg.image, bg.rect)
-            #screen.blit(ground.image, ground.rect)
 
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
@@ -111,8 +91,11 @@ def game_loop(screen, clock, running, dt):
             check_player_jump(player1)
             check_player_jump(player2)
 
-            check_player_attack(player1)
-            check_player_attack(player2)
+            player1.check_player_hit(player2)
+            player2.check_player_hit(player1)
+
+            player1.check_player_attack()
+            player2.check_player_attack()
 
             keys = pygame.key.get_pressed()
             if keys[pygame.K_a]:

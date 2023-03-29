@@ -21,6 +21,10 @@ class Player:
         self.health = 100
         self.damage = 10
         self.origin = origin
+        self.is_hit = False
+        self.hit_count = 0
+        self.x_mass = 1
+        self.x_vel = 15
 
     def show_player(self):
         self.image = pygame.image.load(self.avatar)
@@ -37,9 +41,29 @@ class Player:
         if self.rect.colliderect(player.rect):
             if self.rect.x > player.rect.x and self.facing == 'left':
                 player.health -= self.damage
-            elif self.rect.x < player.rect.x and self.facing == 'right':
+                player.get_hit()
+            if self.rect.x < player.rect.x and self.facing == 'right':
                 player.health -= self.damage
+                player.get_hit()
+    def get_hit(self):
+        self.is_hit = True
 
+    def check_player_hit(self, attacker):
+        if self.is_hit:
+            if self.x_vel == 0:
+                self.is_hit = False
+                self.x_mass = 1
+                self.x_vel = 15
+                self.hit_count = 0
+            else:
+                self.hit_count += 1
+                force_x = ((1 / 2) * self.x_mass * self.x_vel ** 2) * .7
+                if 0 < self.player_pos.x < 1215:
+                    if attacker.facing == 'left':
+                        self.player_pos.x -= force_x
+                    else:
+                        self.player_pos.x += force_x
+                self.x_vel = self.x_vel - 1
 
     def defend(self):
         print(f'{self.name} defending')
@@ -65,7 +89,7 @@ class Player:
         self.avatar = image
 
     def run_right(self):
-        if self.last_action == "running-right" and self.is_jump == False and self.attacking == False:
+        if self.last_action == "running-right" and self.is_jump == False and self.is_hit == False:
             if 0 < self.counter < 7.5:
                 self.update_image(f"images/{self.folder}/runAnimation/run1.png")
             elif 7.5 <= self.counter < 15:
@@ -87,7 +111,7 @@ class Player:
             self.counter = 0
 
     def run_left(self):
-        if self.last_action == "running-left" and self.is_jump == False:
+        if self.last_action == "running-left" and self.is_jump == False and self.is_hit == False:
             if 0 < self.counter < 7.5:
                 self.update_image(f"images/{self.folder}/runAnimation/run1rev.png")
             elif 7.5 <= self.counter < 15:
@@ -145,3 +169,45 @@ class Player:
                     self.update_image(f"images/{self.folder}/jumpAnimation/jump7.png")
                 else:
                     self.update_image(f"images/{self.folder}/jumpAnimation/jump7rev.png")
+
+    def check_player_attack(self):
+        if self.attacking and self.is_hit == False:
+            self.attack_count += 1
+            if self.attack_count < 15:
+                if self.facing == 'right':
+                    self.update_image(f"images/{self.folder}/attack/attack1.png")
+                else:
+                    self.update_image(f"images/{self.folder}/attack/attack1rev.png")
+            elif self.attack_count <= 30:
+                if self.facing == 'right':
+                    self.update_image(f"images/{self.folder}/attack/attack2.png")
+                else:
+                    self.update_image(f"images/{self.folder}/attack/attack2rev.png")
+            elif self.attack_count <= 45:
+                if self.facing == 'right':
+                    self.update_image(f"images/{self.folder}/attack/attack3.png")
+                else:
+                    self.update_image(f"images/{self.folder}/attack/attack3rev.png")
+            else:
+                if self.facing == 'right':
+                    self.update_image(f"images/{self.folder}/default.png")
+                else:
+                    self.update_image(f"images/{self.folder}/reverse.png")
+                self.attacking = False
+                self.attack_count = 0
+
+    def check_player_jump(self):
+        if self.is_jump and self.is_hit == False:
+            if self.player_pos.y == self.origin and self.jump_count != 0:
+                self.is_jump = False
+                self.mass = 1
+                self.vel = 15
+                self.jump_count = 0
+            else:
+                self.jump_count += 1
+                if self.vel < 0:
+                    self.mass = -1
+                force = ((1 / 2) * self.mass * self.vel ** 2) * .4
+                self.player_pos.y -= force
+                self.vel = self.vel - .5
+            self.do_jump_animation()
