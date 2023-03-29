@@ -15,6 +15,8 @@ class Player:
         self.vel = 15
         self.jump_count = 0
         self.facing = 'right'
+        self.attacking = False
+        self.attack_count = 0
 
     def show_player(self):
         self.image = pygame.image.load(self.avatar)
@@ -23,13 +25,14 @@ class Player:
         self.screen.blit(self.image, self.rect)
 
     def attack(self):
-        print(f'{self.name} attacking')
+        if self.attacking == False:
+            self.attacking = True
 
     def defend(self):
         print(f'{self.name} defending')
 
     def jump(self):
-        if self.is_jump == False:
+        if self.is_jump == False and self.attacking == False:
             self.is_jump = True
 
     def move_left(self, dt):
@@ -47,7 +50,7 @@ class Player:
         self.avatar = image
 
     def run_right(self):
-        if self.last_action == "running-right" and self.is_jump == False:
+        if self.last_action == "running-right" and self.is_jump == False and self.attacking == False:
             if 0 < self.counter < 7.5:
                 self.update_image("images/runAnimation/run1.png")
             elif 7.5 <= self.counter < 15:
@@ -89,3 +92,41 @@ class Player:
                 self.counter = 0
         else:
             self.counter = 0
+
+    def do_jump_animation(self):
+        #if self.attacking == False:
+            if 13 <= self.vel <= 15:
+                if self.facing == 'right':
+                    self.update_image("images/jumpAnimation/jump1.png")
+                else:
+                    self.update_image("images/jumpAnimation/jump1rev.png")
+            elif 11 <= self.vel <= 13:
+                if self.facing == 'right':
+                    self.update_image("images/jumpAnimation/jump2.png")
+                else:
+                    self.update_image("images/jumpAnimation/jump2rev.png")
+            elif 0 <= self.vel <= 11:
+                if self.facing == 'right':
+                    self.update_image("images/jumpAnimation/jump4.png")
+                else:
+                    self.update_image("images/jumpAnimation/jump3rev.png")
+            elif -2 <= self.vel <= 0:
+                if self.facing == 'right':
+                    self.update_image("images/jumpAnimation/jump4.png")
+                else:
+                    self.update_image("images/jumpAnimation/jump4rev.png")
+            elif -12 <= self.vel <= -2:
+                if self.facing == 'right':
+                    self.update_image("images/jumpAnimation/jump5.png")
+                else:
+                    self.update_image("images/jumpAnimation/jump5rev.png")
+            elif -14 <= self.vel <= -12:
+                if self.facing == 'right':
+                    self.update_image("images/jumpAnimation/jump6.png")
+                else:
+                    self.update_image("images/jumpAnimation/jump6rev.png")
+            else:
+                if self.facing == 'right':
+                    self.update_image("images/jumpAnimation/jump7.png")
+                else:
+                    self.update_image("images/jumpAnimation/jump7rev.png")
