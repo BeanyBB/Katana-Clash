@@ -1,12 +1,13 @@
 import pygame
 
 class Player:
-    def __init__(self, weapon, avatar, name, screen, player_pos, color):
+    def __init__(self, weapon, folder, name, screen, player_pos, color):
         self.color = color
+        self.folder = folder
         self.player_pos = player_pos
         self.screen = screen
         self.weapon = weapon
-        self.avatar = avatar
+        self.avatar = f'images/{self.folder}/default.png'
         self.name = name
         self.last_action = 'still'
         self.counter = 0
@@ -52,21 +53,21 @@ class Player:
     def run_right(self):
         if self.last_action == "running-right" and self.is_jump == False and self.attacking == False:
             if 0 < self.counter < 7.5:
-                self.update_image("images/runAnimation/run1.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run1.png")
             elif 7.5 <= self.counter < 15:
-                self.update_image("images/runAnimation/run2.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run2.png")
             elif 15 <= self.counter < 22.5:
-                self.update_image("images/runAnimation/run3.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run3.png")
             elif 22.5 <= self.counter < 30:
-                self.update_image("images/runAnimation/run4.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run4.png")
             elif 30 <= self.counter < 37.5:
-                self.update_image("images/runAnimation/run5.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run5.png")
             elif 37.5 <= self.counter < 45:
-                self.update_image("images/runAnimation/run6.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run6.png")
             elif 45 <= self.counter < 52.5:
-                self.update_image("images/runAnimation/run7.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run7.png")
             else:
-                self.update_image("images/runAnimation/run8.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run8.png")
                 self.counter = 0
         else:
             self.counter = 0
@@ -74,21 +75,21 @@ class Player:
     def run_left(self):
         if self.last_action == "running-left" and self.is_jump == False:
             if 0 < self.counter < 7.5:
-                self.update_image("images/runAnimation/run1rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run1rev.png")
             elif 7.5 <= self.counter < 15:
-                self.update_image("images/runAnimation/run2rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run2rev.png")
             elif 15 <= self.counter < 22.5:
-                self.update_image("images/runAnimation/run3rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run3rev.png")
             elif 22.5 <= self.counter < 30:
-                self.update_image("images/runAnimation/run4rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run4rev.png")
             elif 30 <= self.counter < 37.5:
-                self.update_image("images/runAnimation/run5rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run5rev.png")
             elif 37.5 <= self.counter < 45:
-                self.update_image("images/runAnimation/run6rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run6rev.png")
             elif 45 <= self.counter < 52.5:
-                self.update_image("images/runAnimation/run7rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run7rev.png")
             else:
-                self.update_image("images/runAnimation/run8rev.png")
+                self.update_image(f"images/{self.folder}/runAnimation/run8rev.png")
                 self.counter = 0
         else:
             self.counter = 0
@@ -97,36 +98,36 @@ class Player:
         #if self.attacking == False:
             if 13 <= self.vel <= 15:
                 if self.facing == 'right':
-                    self.update_image("images/jumpAnimation/jump1.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump1.png")
                 else:
-                    self.update_image("images/jumpAnimation/jump1rev.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump1rev.png")
             elif 11 <= self.vel <= 13:
                 if self.facing == 'right':
-                    self.update_image("images/jumpAnimation/jump2.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump2.png")
                 else:
-                    self.update_image("images/jumpAnimation/jump2rev.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump2rev.png")
             elif 0 <= self.vel <= 11:
                 if self.facing == 'right':
-                    self.update_image("images/jumpAnimation/jump4.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump4.png")
                 else:
-                    self.update_image("images/jumpAnimation/jump3rev.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump3rev.png")
             elif -2 <= self.vel <= 0:
                 if self.facing == 'right':
-                    self.update_image("images/jumpAnimation/jump4.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump4.png")
                 else:
-                    self.update_image("images/jumpAnimation/jump4rev.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump4rev.png")
             elif -12 <= self.vel <= -2:
                 if self.facing == 'right':
-                    self.update_image("images/jumpAnimation/jump5.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump5.png")
                 else:
-                    self.update_image("images/jumpAnimation/jump5rev.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump5rev.png")
             elif -14 <= self.vel <= -12:
                 if self.facing == 'right':
-                    self.update_image("images/jumpAnimation/jump6.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump6.png")
                 else:
-                    self.update_image("images/jumpAnimation/jump6rev.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump6rev.png")
             else:
                 if self.facing == 'right':
-                    self.update_image("images/jumpAnimation/jump7.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump7.png")
                 else:
-                    self.update_image("images/jumpAnimation/jump7rev.png")
+                    self.update_image(f"images/{self.folder}/jumpAnimation/jump7rev.png")

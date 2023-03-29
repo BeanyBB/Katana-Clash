@@ -29,26 +29,26 @@ def check_player_attack(Player):
     if Player.attacking:
         Player.attack_count += 1
         if Player.attack_count < 15:
-            if Player.facing == 'right': Player.update_image("images/attack/attack1.png")
-            else: Player.update_image("images/attack/attack1rev.png")
+            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/attack/attack1.png")
+            else: Player.update_image(f"images/{Player.folder}/attack/attack1rev.png")
         elif Player.attack_count <= 30:
-            if Player.facing == 'right': Player.update_image("images/attack/attack2.png")
-            else: Player.update_image("images/attack/attack2rev.png")
+            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/attack/attack2.png")
+            else: Player.update_image(f"images/{Player.folder}/attack/attack2rev.png")
         elif Player.attack_count <= 45:
-            if Player.facing == 'right': Player.update_image("images/attack/attack3.png")
-            else: Player.update_image("images/attack/attack3rev.png")
+            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/attack/attack3.png")
+            else: Player.update_image(f"images/{Player.folder}/attack/attack3rev.png")
         else:
-            if Player.facing == 'right': Player.update_image("images/default.png")
-            else: Player.update_image("images/reverse.png")
+            if Player.facing == 'right': Player.update_image(f"images/{Player.folder}/default.png")
+            else: Player.update_image(f"images/{Player.folder}/reverse.png")
             Player.attacking = False
             Player.attack_count = 0
 
 
 
 def game_loop(screen, clock, running, dt):
-    player1 = Player('sword', "images/default.png", 'player1', screen,
+    player1 = Player('sword', "commander", 'player1', screen,
                      pygame.Vector2(screen.get_width() / 1.5, 510), "red")
-    player2 = Player('sword', 'images/default.png', 'player2', screen,
+    player2 = Player('sword', 'samurai', 'player2', screen,
                      pygame.Vector2(screen.get_width() / 3, 510), "blue")
 
     bg = Background("images/background.jpg", [0,0])
@@ -66,16 +66,16 @@ def game_loop(screen, clock, running, dt):
                 running = False
             elif event.type == pygame.KEYUP:
                 if player2.last_action == "running-left":
-                    player2.update_image("images/reverse.png")
+                    player2.update_image(f"images/{player2.folder}/reverse.png")
                     player2.counter = 0
                 elif player2.last_action == "running-right":
-                    player2.update_image("images/default.png")
+                    player2.update_image(f"images/{player2.folder}/default.png")
                     player2.counter = 0
                 if player1.last_action == "running-left":
-                    player1.update_image("images/reverse.png")
+                    player1.update_image(f"images/{player1.folder}/reverse.png")
                     player1.counter = 0
                 elif player1.last_action == "running-right":
-                    player1.update_image("images/default.png")
+                    player1.update_image(f"images/{player1.folder}/default.png")
                     player1.counter = 0
 
 
