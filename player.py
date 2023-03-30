@@ -26,6 +26,20 @@ class Player:
         self.x_mass = 1
         self.x_vel = 15
 
+
+    def re_new(self):
+        self.health = 100
+        self.damage = 10
+        self.player_pos.x = self.origin[0]
+        self.player_pos.y = self.origin[1]
+
+    def set_location(self, location):
+        self.health = 100
+        self.damage = 10
+        self.player_pos.x = location[0]
+        self.player_pos.y = location[1]
+
+
     def show_player(self):
         self.image = pygame.image.load(self.avatar)
         self.rect = self.image.get_rect()
@@ -198,7 +212,7 @@ class Player:
 
     def check_player_jump(self):
         if self.is_jump and self.is_hit == False:
-            if self.player_pos.y == self.origin and self.jump_count != 0:
+            if self.player_pos.y == self.origin[1] and self.jump_count != 0:
                 self.is_jump = False
                 self.mass = 1
                 self.vel = 15

@@ -2,6 +2,10 @@ import os
 import pygame
 from player import Player
 
+
+
+
+
 class Background(pygame.sprite.Sprite):
     def __init__(self, image_file, location):
         pygame.sprite.Sprite.__init__(self)  #call Sprite initializer
@@ -29,73 +33,59 @@ def check_player_jump(Player):
 
 def game_loop(screen, clock, running, dt):
     player1 = Player('sword', "commander", 'player1', screen,
-                     pygame.Vector2(screen.get_width() / 1.5, 452), "red", 452)
+                     pygame.Vector2(screen.get_width() / 3, 372), "red", [screen.get_width() / 3, 372])
     player2 = Player('sword', 'samurai', 'player2', screen,
-                     pygame.Vector2(screen.get_width() / 3, 510), "blue", 510)
-
-    all_players = (player1, player2)
-
+                     pygame.Vector2(screen.get_width() / 1.5, 430), "blue", [screen.get_width() / 1.5, 430])
+    display1 = Player('sword', "commander", 'display1', screen,
+                     pygame.Vector2(1215*(5/6)-250, 70), "red", 372)
+    display2 = Player('sword', 'samurai', 'display2', screen,
+                      pygame.Vector2(1215 * (5 / 6)+10, 20), "blue", 430)
+    all_players = [player1, player2]
     bg = Background("images/background.png", [0,0])
-
-
+    main_menu = Background("images/mainMenu.jpg", [0,0])
     white = (255, 255, 255)
     green = (0, 255, 0)
     blue = (0, 0, 128)
     font = pygame.font.Font('freesansbold.ttf', 32)
-
-    game_on = True
+    game_on = False
 
     while running:
+        screen.fill([255, 255, 255])
         if game_on:
-            screen.fill([255, 255, 255])
             screen.blit(bg.image, bg.rect)
-
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYUP:
-                    if player2.last_action == "running-left":
-                        player2.update_image(f"images/{player2.folder}/reverse.png")
-                        player2.counter = 0
-                    elif player2.last_action == "running-right":
-                        player2.update_image(f"images/{player2.folder}/default.png")
-                        player2.counter = 0
-                    if player1.last_action == "running-left":
-                        player1.update_image(f"images/{player1.folder}/reverse.png")
-                        player1.counter = 0
-                    elif player1.last_action == "running-right":
-                        player1.update_image(f"images/{player1.folder}/default.png")
-                        player1.counter = 0
+                    for player in all_players:
+                        if player.last_action == "running-left" and player.attacking == False:
+                            player.update_image(f"images/{player.folder}/reverse.png")
+                            player.counter = 0
+                        elif player.last_action == "running-right" and player.attacking == False:
+                            player.update_image(f"images/{player.folder}/default.png")
+                            player.counter = 0
 
 
             text = font.render(f'player1: {player1.health}   player2: {player2.health}', True, green, blue)
             textRect = text.get_rect()
             textRect.center = (1366/2, 50)
-            screen.blit(text, textRect)
 
             for player in all_players:
+                player.show_player()
+                player.check_player_jump()
+                player.check_player_attack()
                 if player.health == 0:
                     if player == player2: winner = 'player1'
                     else: winner = 'player2'
                     text = font.render(f'GAME OVER     WINNER --> {winner}', True, green, blue)
-                    player1.damage = 0
-                    player2.damage = 0
+                    game_on = False
 
             screen.blit(text, textRect)
 
-            player1.show_player()
-            player2.show_player()
-
-            check_player_jump(player1)
-            check_player_jump(player2)
-
             player1.check_player_hit(player2)
             player2.check_player_hit(player1)
-
-            player1.check_player_attack()
-            player2.check_player_attack()
 
             keys = pygame.key.get_pressed()
             if keys[pygame.K_a]:
@@ -131,15 +121,35 @@ def game_loop(screen, clock, running, dt):
             if keys[pygame.K_s]:
                 player1.attack(player2)
 
-            # flip() the display to put your work on screen
-            pygame.display.flip()
 
-            # limits FPS to 60
-            # dt is delta time in seconds since last frame, used for framerate-
-            # independent physics.
-            dt = clock.tick(60) / 1000
+        else:
+            screen.blit(main_menu.image, main_menu.rect)
+            display1.show_player()
+            display2.show_player()
+            player1.player_pos.x = player1.origin[0]
+            player2.player_pos.x = player2.origin[0]
+            player1.health = 100
+            player2.health = 100
+
+            keys = pygame.key.get_pressed()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            if keys[pygame.K_SPACE]:
+                game_on = True
+            if keys[pygame.K_ESCAPE]:
+                running = False
+
+        # flip() the display to put your work on screen
+        pygame.display.flip()
+
+        # limits FPS to 60
+        # dt is delta time in seconds since last frame, used for framerate-
+        # independent physics.
+        dt = clock.tick(60) / 1000
 
     pygame.quit()
+
 
 
 def main():
@@ -148,7 +158,6 @@ def main():
     clock = pygame.time.Clock()
     running = True
     dt = 0
-
     game_loop(screen, clock, running, dt)
 
 
