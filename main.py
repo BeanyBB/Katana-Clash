@@ -37,20 +37,22 @@ def game_loop(screen, clock, running, dt):
     player2 = Player('sword', 'samurai', 'player2', screen,
                      pygame.Vector2(screen.get_width() / 1.5, 430), "blue", [screen.get_width() / 1.5, 430])
     display1 = Player('sword', "commander", 'display1', screen,
-                     pygame.Vector2(1215*(5/6)-250, 70), "red", 372)
+                     pygame.Vector2(0, 372), "red", [0,372])
     display2 = Player('sword', 'samurai', 'display2', screen,
-                      pygame.Vector2(1215 * (5 / 6)+10, 20), "blue", 430)
+                      pygame.Vector2(1215, 430), "blue", [1215,430])
     all_players = [player1, player2]
     bg = Background("images/background.png", [0,0])
     main_menu = Background("images/mainMenu.jpg", [0,0])
-    white = (255, 255, 255)
     green = (0, 255, 0)
     blue = (0, 0, 128)
     font = pygame.font.Font('freesansbold.ttf', 32)
     game_on = False
+    game_over_count = 0
+    logo = pygame.image.load("images/logo.png")
+    space = pygame.image.load("images/space.png")
+
 
     while running:
-        screen.fill([255, 255, 255])
         if game_on:
             screen.blit(bg.image, bg.rect)
             # poll for events
@@ -76,11 +78,13 @@ def game_loop(screen, clock, running, dt):
                 player.show_player()
                 player.check_player_jump()
                 player.check_player_attack()
-                if player.health == 0:
+                if player.health <= 0:
+                    game_over_count += 1
                     if player == player2: winner = 'player1'
                     else: winner = 'player2'
                     text = font.render(f'GAME OVER     WINNER --> {winner}', True, green, blue)
-                    game_on = False
+                    if game_over_count == 300:
+                        game_on = False
 
             screen.blit(text, textRect)
 
@@ -124,12 +128,26 @@ def game_loop(screen, clock, running, dt):
 
         else:
             screen.blit(main_menu.image, main_menu.rect)
+            screen.blit(logo, (200, 50))
+            player1.re_new()
+            player2.re_new()
             display1.show_player()
             display2.show_player()
-            player1.player_pos.x = player1.origin[0]
-            player2.player_pos.x = player2.origin[0]
-            player1.health = 100
-            player2.health = 100
+            display1.facing = 'right'
+            display2.facing = 'left'
+            if display1.counter <= 50:
+                display1.last_action = "running-right"
+                display1.counter += 1
+                display1.run_right()
+                display1.move_right(dt)
+            if display2.counter <= 50:
+                display2.last_action = "running-left"
+                display2.counter += 1
+                display2.run_left()
+                display2.move_left(dt)
+            if display2.counter >= 50 and display1.counter >= 50:
+                screen.blit(space, (575, 400))
+            game_over_count = 0
 
             keys = pygame.key.get_pressed()
             for event in pygame.event.get():

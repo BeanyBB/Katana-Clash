@@ -28,10 +28,8 @@ class Player:
 
 
     def re_new(self):
-        self.health = 100
-        self.damage = 10
         self.player_pos.x = self.origin[0]
-        self.player_pos.y = self.origin[1]
+        self.health = 100
 
     def set_location(self, location):
         self.health = 100
