@@ -43,30 +43,34 @@ def game_loop(screen, clock, running, dt):
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_w:
+                        if player1.is_double_jump == 0:
+                            player1.is_double_jump_possible = True
+                    if event.key == pygame.K_i:
+                        if player2.is_double_jump == 0:
+                            player2.is_double_jump_possible = True
                     if event.key == pygame.K_e:
                         player1.is_protecting = False
                         player1.protect_count = 0
                     if event.key == pygame.K_o:
                         player2.is_protecting = False
                         player2.protect_count = 0
-                    if event.key == pygame.K_d:
+                    if event.key == pygame.K_d and player1.is_doing_nothing():
                         player1.last_action = 'still'
                         player1.counter = 0
                         player1.update_image(f"images/{player1.folder}/default.png")
-                    if event.key == pygame.K_a:
+                    if event.key == pygame.K_a and player1.is_doing_nothing():
                         player1.last_action = 'still'
                         player1.counter = 0
                         player1.update_image(f"images/{player1.folder}/reverse.png")
-                    if event.key == pygame.K_l:
+                    if event.key == pygame.K_l and player2.is_doing_nothing():
                         player2.last_action = 'still'
                         player2.counter = 0
                         player2.update_image(f"images/{player2.folder}/default.png")
-                    if event.key == pygame.K_j:
+                    if event.key == pygame.K_j and player2.is_doing_nothing():
                         player2.last_action = 'still'
                         player2.counter = 0
                         player2.update_image(f"images/{player2.folder}/reverse.png")
-                    for player in all_players:
-                        player.update_to_idle()
 
 
             text = font.render(f'player1: {player1.health}   player2: {player2.health}', True, green, blue)
@@ -77,6 +81,7 @@ def game_loop(screen, clock, running, dt):
                 player.show_player()
                 player.check_player_jump()
                 player.check_player_attack()
+                player.update_to_idle()
                 if player.health <= 0:
                     game_over_count += 1
                     if player == player2: winner = 'player1'
@@ -89,6 +94,8 @@ def game_loop(screen, clock, running, dt):
 
             player1.check_player_hit(player2)
             player2.check_player_hit(player1)
+            player1.protect_knockback(player2)
+            player2.protect_knockback(player1)
 
             keys = pygame.key.get_pressed()
             if keys[pygame.K_a]:

@@ -24,6 +24,10 @@ class Player:
         self.x_vel = 15
         self.is_protecting = False
         self.protect_count = 0
+        self.is_knockback = False
+        self.block_count = 0
+        self.is_double_jump = False
+        self.is_double_jump_possible = False
 
 
     def re_new(self, image):
@@ -44,17 +48,48 @@ class Player:
             self.last_action = "attacking"
             self.attacking = True
             for player in players:
-                if player != self and player.is_protecting == False:
+                if player != self:
                     self.check_hitbox(player)
 
     def check_hitbox(self, player):
         if self.rect.colliderect(player.rect):
             if self.rect.x > player.rect.x and self.facing == 'left':
-                player.health -= self.damage
-                player.is_hit = True
+                if player.is_protecting and player.facing == 'right':
+                    self.is_knockback = True
+                    player.is_knockback = True
+                else:
+                    player.health -= self.damage
+                    player.is_hit = True
             if self.rect.x < player.rect.x and self.facing == 'right':
-                player.health -= self.damage
-                player.is_hit = True
+                if player.is_protecting and player.facing == 'left':
+                    self.is_knockback = True
+                    player.is_knockback = True
+                else:
+                    player.health -= self.damage
+                    player.is_hit = True
+
+    def protect_knockback(self, player):
+        if self.is_knockback:
+            if self.x_vel == 0:
+                self.is_knockback = False
+                self.x_mass = 1
+                self.x_vel = 15
+                self.hit_count = 0
+            else:
+                self.hit_count += 1
+                force_x = ((1 / 2) * self.x_mass * self.x_vel ** 2) * .15
+                if 0 < self.player_pos.x < 1215:
+                    if self.last_action == "attacking":
+                        if self.facing == 'left':
+                            self.player_pos.x += force_x
+                        else:
+                            self.player_pos.x -= force_x
+                    else:
+                        if player.facing == 'left':
+                            self.player_pos.x -= force_x
+                        else:
+                            self.player_pos.x += force_x
+                self.x_vel = self.x_vel - 1
 
     def check_player_hit(self, attacker):
         if self.is_hit:
@@ -89,12 +124,16 @@ class Player:
                 self.update_image(f"images/{self.folder}/protect/protect2rev.png")
 
     def jump(self):
-        if self.is_jump == False and self.attacking == False:
-            self.last_action = "jumping"
-            self.is_jump = True
+        print(f"{self.is_double_jump}   {self.attacking}     {self.is_protecting}")
+        if self.is_double_jump == 0 and self.attacking == False and self.is_protecting == False:
+            if self.is_double_jump_possible and self.is_jump:
+                self.is_double_jump += 1
+            else:
+                self.last_action = "jumping"
+                self.is_jump = True
 
     def move_left(self, dt):
-        if self.is_protecting == False:
+        if self.is_protecting == False or self.is_jump:
             self.last_action = "running-left"
             self.facing = 'left'
             if self.player_pos.x > 0:
@@ -102,7 +141,7 @@ class Player:
             self.run_left()
 
     def move_right(self, dt):
-        if self.is_protecting == False:
+        if self.is_protecting == False or self.is_jump:
             self.last_action = "running-right"
             self.facing = 'right'
             if self.player_pos.x < 1215:
@@ -182,12 +221,12 @@ class Player:
                 self.update_image(f"images/{self.folder}/jumpAnimation/jump4.png")
             else:
                 self.update_image(f"images/{self.folder}/jumpAnimation/jump4rev.png")
-        elif -12 <= self.vel <= -2:
+        elif -9 <= self.vel <= -2:
             if self.facing == 'right':
                 self.update_image(f"images/{self.folder}/jumpAnimation/jump5.png")
             else:
                 self.update_image(f"images/{self.folder}/jumpAnimation/jump5rev.png")
-        elif -14 <= self.vel <= -12:
+        elif -14 <= self.vel <= -9:
             if self.facing == 'right':
                 self.update_image(f"images/{self.folder}/jumpAnimation/jump6.png")
             else:
@@ -226,8 +265,15 @@ class Player:
 
     def check_player_jump(self):
         if self.is_jump and self.is_hit == False:
+            if self.is_double_jump == 1:
+                self.is_double_jump += 1
+                self.mass = 1
+                self.vel = 15
+                self.jump_count = 0
             if self.player_pos.y == self.origin[1] and self.jump_count != 0:
                 self.is_jump = False
+                self.is_double_jump = 0
+                self.is_double_jump_possible = False
                 self.mass = 1
                 self.vel = 15
                 self.jump_count = 0
@@ -235,15 +281,24 @@ class Player:
                 self.jump_count += 1
                 if self.vel < 0:
                     self.mass = -1
-                force = ((1 / 2) * self.mass * self.vel ** 2) * .35
-                self.player_pos.y -= force
+                force = ((1 / 2) * self.mass * self.vel ** 2) * .2
+                if self.player_pos.y - force > self.origin[1]:
+                    self.player_pos.y = self.origin[1]
+                else:
+                    self.player_pos.y -= force
                 self.vel = self.vel - .5
             self.do_jump_animation()
 
     def update_to_idle(self):
-        if (self.last_action == "jumping" and self.player_pos.x == self.origin[0]) or (self.last_action == "protecting" and self.is_protecting == False):
+        if (self.last_action == "jumping" and self.player_pos.y == self.origin[1]) or (self.last_action == "protecting" and self.is_protecting == False):
             if self.facing == 'left':
                 self.update_image(f"images/{self.folder}/reverse.png")
             else:
                 self.update_image(f"images/{self.folder}/default.png")
+
+    def is_doing_nothing(self):
+        if self.is_protecting == False and self.is_jump == False and self.attacking == False:
+            return True
+        else:
+            return False
 
