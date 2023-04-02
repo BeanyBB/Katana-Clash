@@ -5,15 +5,30 @@ from player import Player
 
 
 
+class Ground:
+    def __init__(self, image, pos, is_main_ground=False):
+        pygame.sprite.Sprite.__init__(self)  # call Sprite initializer
+        self.image = pygame.image.load(image)
+        self.rect = self.image.get_rect()
+        self.rect.left, self.rect.top = pos
+        self.is_main_ground = is_main_ground
+        if self.is_main_ground:
+            self.rect.left = (pygame.display.get_surface().get_width() / 2) - (self.rect.width / 2)
+
+
 
 class Background(pygame.sprite.Sprite):
-    def __init__(self, image_file, location):
+    def __init__(self, image_file, location, ground_objects):
         pygame.sprite.Sprite.__init__(self)  #call Sprite initializer
         self.image = pygame.image.load(image_file)
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = location
+        self.ground_objects = ground_objects
 
-
+    def show_environment(self, screen):
+        screen.blit(self.image, self.rect)
+        for ground in self.ground_objects:
+            screen.blit(ground.image, ground.rect)
 
 def game_loop(screen, clock, running, dt):
     player1 = Player("commander", screen, pygame.Vector2(screen.get_width() / 3, 372),
@@ -23,8 +38,11 @@ def game_loop(screen, clock, running, dt):
     display1 = Player("commander", screen, pygame.Vector2(0, 372), [0,372])
     display2 = Player('samurai', screen, pygame.Vector2(1215, 430), [1215,430])
     all_players = [player1, player2]
-    bg = Background("images/background.png", [0,0])
-    main_menu = Background("images/mainMenu.jpg", [0,0])
+    ground = Ground("images/ground1.png", [0, 600], True)
+    up_ground_1 = Ground("images/ground2.png", [200, 250])
+    up_ground_2 = Ground("images/ground2.png", [800, 300])
+    bg = Background("images/background.png", [0,0],[ground, up_ground_1, up_ground_2])
+    main_menu = Background("images/mainMenu.jpg", [0,0], [])
     green = (0, 255, 0)
     blue = (0, 0, 128)
     font = pygame.font.Font('freesansbold.ttf', 32)
@@ -36,7 +54,7 @@ def game_loop(screen, clock, running, dt):
 
     while running:
         if game_on:
-            screen.blit(bg.image, bg.rect)
+            bg.show_environment(screen)
             # poll for events
             # pygame.QUIT event means the user clicked X to close your window
             for event in pygame.event.get():
@@ -79,9 +97,10 @@ def game_loop(screen, clock, running, dt):
 
             for player in all_players:
                 player.show_player()
-                player.check_player_jump()
+                player.check_player_jump(bg)
                 player.check_player_attack()
                 player.update_to_idle()
+                #player.gravity(bg)
                 if player.health <= 0:
                     game_over_count += 1
                     if player == player2: winner = 'player1'
@@ -162,7 +181,7 @@ def game_loop(screen, clock, running, dt):
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((1366, 768))
+    screen = pygame.display.set_mode((1386, 780))
     clock = pygame.time.Clock()
     running = True
     dt = 0

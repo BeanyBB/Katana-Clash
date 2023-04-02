@@ -28,6 +28,7 @@ class Player:
         self.block_count = 0
         self.is_double_jump = False
         self.is_double_jump_possible = False
+        self.do_gravity = False
 
 
     def re_new(self, image):
@@ -124,13 +125,39 @@ class Player:
                 self.update_image(f"images/{self.folder}/protect/protect2rev.png")
 
     def jump(self):
-        print(f"{self.is_double_jump}   {self.attacking}     {self.is_protecting}")
         if self.is_double_jump == 0 and self.attacking == False and self.is_protecting == False:
             if self.is_double_jump_possible and self.is_jump:
                 self.is_double_jump += 1
             else:
                 self.last_action = "jumping"
                 self.is_jump = True
+
+    def check_on_platform(self, bg):
+        on_plat = False
+        if self.last_action == 'running-left' or self.last_action == 'running-right':
+            for ground in bg.ground_objects:
+                if pygame.Rect.colliderect(self.rect, ground.rect):
+                    on_plat = True
+        return on_plat
+
+    def gravity(self, bg):
+        if self.check_on_platform(bg):
+            fall = True
+            for ground in bg.ground_objects:
+                if pygame.Rect.colliderect(self.rect, ground.rect) and self.jump_count != 0 and self.vel < 0:
+                    if self.player_pos.y + self.rect.height <= ground.rect.y + ground.rect.height:
+                        self.player_pos.y = ground.rect.y - self.rect.height
+                        self.mass = 1
+                        self.vel = 15
+                        self.jump_count = 0
+                        fall = False
+            if fall and not self.is_jump:
+                self.jump_count += 1
+                self.mass = -1
+                force = ((1 / 2) * self.mass * self.vel ** 2) * .2
+                self.player_pos.y -= force
+                self.vel = self.vel - .5
+            self.do_jump_animation()
 
     def move_left(self, dt):
         if self.is_protecting == False or self.is_jump:
@@ -263,34 +290,36 @@ class Player:
                 self.attacking = False
                 self.attack_count = 0
 
-    def check_player_jump(self):
+    def check_player_jump(self, bg):
+        jump_stop = False
         if self.is_jump and self.is_hit == False:
             if self.is_double_jump == 1:
                 self.is_double_jump += 1
                 self.mass = 1
                 self.vel = 15
                 self.jump_count = 0
-            if self.player_pos.y == self.origin[1] and self.jump_count != 0:
-                self.is_jump = False
-                self.is_double_jump = 0
-                self.is_double_jump_possible = False
-                self.mass = 1
-                self.vel = 15
-                self.jump_count = 0
-            else:
+            for ground in bg.ground_objects:
+                if pygame.Rect.colliderect(self.rect, ground.rect) and self.jump_count != 0 and self.vel < 0:
+                    if self.player_pos.y + self.rect.height <= ground.rect.y + ground.rect.height:
+                        self.player_pos.y = ground.rect.y - self.rect.height
+                        self.is_jump = False
+                        self.is_double_jump = 0
+                        self.is_double_jump_possible = False
+                        self.mass = 1
+                        self.vel = 15
+                        self.jump_count = 0
+                        jump_stop = True
+            if not jump_stop:
                 self.jump_count += 1
                 if self.vel < 0:
                     self.mass = -1
                 force = ((1 / 2) * self.mass * self.vel ** 2) * .2
-                if self.player_pos.y - force > self.origin[1]:
-                    self.player_pos.y = self.origin[1]
-                else:
-                    self.player_pos.y -= force
+                self.player_pos.y -= force
                 self.vel = self.vel - .5
-            self.do_jump_animation()
+        self.do_jump_animation()
 
     def update_to_idle(self):
-        if (self.last_action == "jumping" and self.player_pos.y == self.origin[1]) or (self.last_action == "protecting" and self.is_protecting == False):
+        if ((self.last_action == "still" or self.last_action == "jumping") and not self.is_jump) or (self.last_action == "protecting" and not self.is_protecting):
             if self.facing == 'left':
                 self.update_image(f"images/{self.folder}/reverse.png")
             else:
