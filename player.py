@@ -28,7 +28,8 @@ class Player:
         self.block_count = 0
         self.is_double_jump = False
         self.is_double_jump_possible = False
-        self.do_gravity = False
+        self.fall_vel = 15
+        self.fall_mass = -1
 
 
     def re_new(self, image):
@@ -133,31 +134,28 @@ class Player:
                 self.is_jump = True
 
     def check_on_platform(self, bg):
-        on_plat = False
-        if self.last_action == 'running-left' or self.last_action == 'running-right':
-            for ground in bg.ground_objects:
-                if pygame.Rect.colliderect(self.rect, ground.rect):
-                    on_plat = True
+        on_plat = True
+        for ground in bg.ground_objects:
+            if ground.is_main_ground:
+                if (self.rect.x-self.rect.width/4) < ground.rect.x and self.rect.y+self.rect.height < ground.rect.y:
+                    on_plat = False
         return on_plat
 
     def gravity(self, bg):
-        if self.check_on_platform(bg):
-            fall = True
-            for ground in bg.ground_objects:
-                if pygame.Rect.colliderect(self.rect, ground.rect) and self.jump_count != 0 and self.vel < 0:
-                    if self.player_pos.y + self.rect.height <= ground.rect.y + ground.rect.height:
-                        self.player_pos.y = ground.rect.y - self.rect.height
-                        self.mass = 1
-                        self.vel = 15
-                        self.jump_count = 0
-                        fall = False
-            if fall and not self.is_jump:
-                self.jump_count += 1
-                self.mass = -1
-                force = ((1 / 2) * self.mass * self.vel ** 2) * .2
-                self.player_pos.y -= force
-                self.vel = self.vel - .5
+        if not self.check_on_platform(bg) and not self.is_jump:
+            if self.jump_count == 0:
+                self.fall_vel = 0
+            self.jump_count += 1
+            force = ((1 / 2) * self.fall_mass * self.fall_vel ** 2) * .2
+            self.player_pos.y -= force
+            self.fall_vel = self.fall_vel - .5
             self.do_jump_animation()
+        else:
+            self.fall_vel = 15
+            self.jump_count = 0
+
+
+
 
     def move_left(self, dt):
         if self.is_protecting == False or self.is_jump:
