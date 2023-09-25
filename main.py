@@ -3,8 +3,6 @@ import pygame
 from player import Player
 
 
-
-
 class Ground:
     def __init__(self, image, pos, is_main_ground=False):
         pygame.sprite.Sprite.__init__(self)  # call Sprite initializer
@@ -16,10 +14,9 @@ class Ground:
             self.rect.left = (pygame.display.get_surface().get_width() / 2) - (self.rect.width / 2)
 
 
-
 class Background(pygame.sprite.Sprite):
     def __init__(self, image_file, location, ground_objects):
-        pygame.sprite.Sprite.__init__(self)  #call Sprite initializer
+        pygame.sprite.Sprite.__init__(self)  # call Sprite initializer
         self.image = pygame.image.load(image_file)
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = location
@@ -30,19 +27,21 @@ class Background(pygame.sprite.Sprite):
         for ground in self.ground_objects:
             screen.blit(ground.image, ground.rect)
 
+
 def game_loop(screen, clock, running, dt):
-    player1 = Player("commander", screen, pygame.Vector2(screen.get_width() / 3, 372),
-                     [screen.get_width() / 3, 372])
-    player2 = Player('samurai', screen, pygame.Vector2(screen.get_width() / 1.5, 430),
-                     [screen.get_width() / 1.5, 430])
-    display1 = Player("commander", screen, pygame.Vector2(0, 372), [0,372])
-    display2 = Player('samurai', screen, pygame.Vector2(1215, 430), [1215,430])
-    all_players = [player1, player2]
+    platforms = pygame.sprite.Group()
     ground = Ground("images/ground1.png", [0, 600], True)
     up_ground_1 = Ground("images/ground2.png", [200, 250])
     up_ground_2 = Ground("images/ground2.png", [800, 300])
-    bg = Background("images/background.png", [0,0],[ground, up_ground_1, up_ground_2])
-    main_menu = Background("images/mainMenu.jpg", [0,0], [])
+    bg = Background("images/background.png", [0, 0], [ground, up_ground_1, up_ground_2])
+    player1 = Player("commander", screen, pygame.Vector2(screen.get_width() / 3, 0),
+                     [screen.get_width() / 3, 372], ground)
+    player2 = Player('samurai', screen, pygame.Vector2(screen.get_width() / 1.5, 0),
+                     [screen.get_width() / 1.5, 430], ground)
+    all_players = [player1, player2]
+    display1 = Player("commander", screen, pygame.Vector2(0, 372), [0, 372], ground)
+    display2 = Player('samurai', screen, pygame.Vector2(1215, 430), [1215, 430], ground)
+    main_menu = Background("images/mainMenu.jpg", [0, 0], [])
     green = (0, 255, 0)
     blue = (0, 0, 128)
     font = pygame.font.Font('freesansbold.ttf', 32)
@@ -50,7 +49,6 @@ def game_loop(screen, clock, running, dt):
     game_over_count = 0
     logo = pygame.image.load("images/logo.png")
     space = pygame.image.load("images/space.png")
-
 
     while running:
         if game_on:
@@ -90,21 +88,22 @@ def game_loop(screen, clock, running, dt):
                         player2.counter = 0
                         player2.update_image(f"images/{player2.folder}/reverse.png")
 
-
             text = font.render(f'player1: {player1.health}   player2: {player2.health}', True, green, blue)
             textRect = text.get_rect()
-            textRect.center = (1366/2, 50)
+            textRect.center = (1366 / 2, 50)
 
             for player in all_players:
                 player.show_player()
                 player.check_player_jump(bg)
                 player.check_player_attack()
                 player.update_to_idle()
-                #player.gravity(bg)
+                # player.gravity(bg)
                 if player.health <= 0:
                     game_over_count += 1
-                    if player == player2: winner = 'player1'
-                    else: winner = 'player2'
+                    if player == player2:
+                        winner = 'player1'
+                    else:
+                        winner = 'player2'
                     text = font.render(f'GAME OVER     WINNER --> {winner}', True, green, blue)
                     if game_over_count == 300:
                         game_on = False
@@ -176,7 +175,6 @@ def game_loop(screen, clock, running, dt):
         dt = clock.tick(60) / 1000
 
     pygame.quit()
-
 
 
 def main():

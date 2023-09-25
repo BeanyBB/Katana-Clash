@@ -1,7 +1,7 @@
 import pygame
 
 class Player:
-    def __init__(self, folder, screen, player_pos, origin):
+    def __init__(self, folder, screen, player_pos, origin, ground):
         self.folder = folder
         self.player_pos = player_pos
         self.screen = screen
@@ -30,6 +30,9 @@ class Player:
         self.is_double_jump_possible = False
         self.fall_vel = 15
         self.fall_mass = -1
+        #self.rect = self.image.get_rect()
+
+        #self.rect = self.image.get_rect()
 
 
     def re_new(self, image):
@@ -135,25 +138,18 @@ class Player:
 
     def check_on_platform(self, bg):
         on_plat = True
+        is_on_main = False
         for ground in bg.ground_objects:
             if ground.is_main_ground:
-                if (self.rect.x-self.rect.width/4) < ground.rect.x and self.rect.y+self.rect.height < ground.rect.y:
-                    on_plat = False
+                if self.rect.x + self.rect.width < ground.rect:
+                    if ground.is_main_ground:
+                        is_on_main = True
         return on_plat
 
     def gravity(self, bg):
-        if not self.check_on_platform(bg) and not self.is_jump:
-            if self.jump_count == 0:
-                self.fall_vel = 0
-            self.jump_count += 1
-            force = ((1 / 2) * self.fall_mass * self.fall_vel ** 2) * .2
-            self.player_pos.y -= force
-            self.fall_vel = self.fall_vel - .5
-            self.do_jump_animation()
-        else:
-            self.fall_vel = 15
-            self.jump_count = 0
-
+        if not self.is_jump:
+            if not self.check_on_platform(bg):
+                print('should fall')
 
 
 
