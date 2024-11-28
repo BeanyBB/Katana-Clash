@@ -1,327 +1,191 @@
 import pygame
+import os
+from settings import PLAYER_WIDTH, PLAYER_HEIGHT, GRAVITY
+from action import move, attack
+
 
 class Player:
-    def __init__(self, folder, screen, player_pos, origin, ground):
-        self.folder = folder
-        self.player_pos = player_pos
-        self.screen = screen
-        self.avatar = f'images/{self.folder}/default.png'
-        self.last_action = 'still'
-        self.counter = 0
-        self.is_jump = False
-        self.mass = 1
-        self.vel = 15
+    def __init__(self, x, y, color, image_folder, added_height=0):
+        self.rect = pygame.Rect(x, y, PLAYER_WIDTH, PLAYER_HEIGHT + added_height)  # Collision box
+        self.color = color
+        self.velocity_y = 0
+        self.is_jumping = False
         self.jump_count = 0
-        self.facing = 'right'
-        self.attacking = False
-        self.attack_count = 0
+        self.jump_released = True
         self.health = 100
-        self.damage = 10
-        self.origin = origin
-        self.is_hit = False
-        self.hit_count = 0
-        self.x_mass = 1
-        self.x_vel = 15
-        self.is_protecting = False
-        self.protect_count = 0
-        self.is_knockback = False
-        self.block_count = 0
-        self.is_double_jump = False
-        self.is_double_jump_possible = False
-        self.fall_vel = 15
-        self.fall_mass = -1
-        #self.rect = self.image.get_rect()
+        self.on_platform = False
+        self.current_frame = 0  # Tracks the current animation frame
+        self.animation_timer = 0  # Tracks time between animation frames
+        self.attack_animation_timer = 0  # Tracks time specifically for the attack animation
+        self.state = "idle"  # Default state: 'idle', 'run', 'jump', 'attack', etc.
+        self.flip = False  # Whether the image should be flipped horizontally
+        self.last_attack_time = 0  # Tracks the last time the player attacked (for cooldown)
+        self.is_defending = False
 
-        #self.rect = self.image.get_rect()
+        # Load all animations
+        self.animations = self.load_animations(image_folder)
 
+    def load_animations(self, folder):
+        """Load all animations from the specified folder."""
+        animations = {
+            "idle": [pygame.image.load(os.path.join(folder, "default.png"))],
+            "run": [pygame.image.load(os.path.join(folder, "runAnimation", f"run{i}.png")) for i in range(1, 9)],
+            "jump": [pygame.image.load(os.path.join(folder, "jumpAnimation", f"jump{i}.png")) for i in range(1, 8)],
+            "attack": [pygame.image.load(os.path.join(folder, "attack", f"attack{i}.png")) for i in range(1, 4)],
+            "defend": [pygame.image.load(os.path.join(folder, "protect", f"protect{i}.png")) for i in range(1, 3)],
+        }
 
-    def re_new(self, image):
-        self.player_pos.x = self.origin[0]
-        self.health = 100
-        self.update_image(image)
-        self.last_action = 'still'
+        # Scale all images to match PLAYER_WIDTH and PLAYER_HEIGHT
+        for key, frames in animations.items():
+            animations[key] = [pygame.transform.scale(frame, (PLAYER_WIDTH, PLAYER_HEIGHT)) for frame in frames]
 
+        return animations
 
-    def show_player(self):
-        self.image = pygame.image.load(self.avatar)
-        self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = [self.player_pos.x, self.player_pos.y]
-        self.screen.blit(self.image, self.rect)
+    def update_animation(self, fps=60):
+        """Update the player's animation frame based on the current state."""
+        # Ensure the current state exists in animations; fallback to 'idle' if not
+        if self.state not in self.animations:
+            self.state = "idle"
 
-    def attack(self, players):
-        if self.attacking == False:
-            self.last_action = "attacking"
-            self.attacking = True
-            for player in players:
-                if player != self:
-                    self.check_hitbox(player)
+        # Ensure there are frames to cycle through
+        if len(self.animations[self.state]) == 0:
+            return
 
-    def check_hitbox(self, player):
-        if self.rect.colliderect(player.rect):
-            if self.rect.x > player.rect.x and self.facing == 'left':
-                if player.is_protecting and player.facing == 'right':
-                    self.is_knockback = True
-                    player.is_knockback = True
-                else:
-                    player.health -= self.damage
-                    player.is_hit = True
-            if self.rect.x < player.rect.x and self.facing == 'right':
-                if player.is_protecting and player.facing == 'left':
-                    self.is_knockback = True
-                    player.is_knockback = True
-                else:
-                    player.health -= self.damage
-                    player.is_hit = True
+        # Frames per animation update (controls animation speed)
+        frames_per_update = fps // 15  # Default animation speed for all states except attack
+        attack_frames_per_update = fps // 4  # Slower animation for attack
 
-    def protect_knockback(self, player):
-        if self.is_knockback:
-            if self.x_vel == 0:
-                self.is_knockback = False
-                self.x_mass = 1
-                self.x_vel = 15
-                self.hit_count = 0
-            else:
-                self.hit_count += 1
-                force_x = ((1 / 2) * self.x_mass * self.x_vel ** 2) * .15
-                if 0 < self.player_pos.x < 1215:
-                    if self.last_action == "attacking":
-                        if self.facing == 'left':
-                            self.player_pos.x += force_x
+        # Handle attack animation
+        if self.state == "attack":
+            self.attack_animation_timer += 1
+            if self.attack_animation_timer >= attack_frames_per_update:
+                previous_frame = self.current_frame
+                self.current_frame = (self.current_frame + 1) % len(self.animations[self.state])  # Cycle through frames
+                self.attack_animation_timer = 0  # Reset the attack animation timer
+
+                # Handle attack animation finishing
+                if self.current_frame == len(self.animations[self.state]) - 1:  # Last frame of attack animation
+                    keys = pygame.key.get_pressed()  # Check current movement keys
+                    if keys[pygame.K_a] or keys[pygame.K_d]:  # Player is moving
+                        self.state = "run"
+                    else:  # Player is stationary
+                        self.state = "idle"
+                    self.current_frame = 0  # Reset animation frame for new state
+        elif self.state == "defend":
+            self.current_frame = min(self.current_frame + 1, len(self.animations[self.state]) - 1)  # Freeze on last frame
+        # Handle jump animation
+        elif self.state == "jump":
+            self.animation_timer += 1
+            if self.animation_timer >= frames_per_update:
+                previous_frame = self.current_frame
+
+                # Upward movement (frames 1-3)
+                if self.velocity_y < 0:  # Player is moving up
+                    if self.current_frame < 3:  # Progress through frames 1, 2, and 3
+                        self.current_frame += 1
+                    else:  # Stay on frame 3 until the velocity becomes positive
+                        self.current_frame = 3
+
+                # Downward movement (frames 4-5)
+                elif self.velocity_y > 0:  # Player is moving down
+                    if self.current_frame < 4:  # Jump directly to frame 4 for downward motion
+                        self.current_frame = 4
+                    elif self.current_frame < 5:  # Play frame 5 after frame 4
+                        self.current_frame += 1
+
+                self.animation_timer = 0  # Reset the timer
+
+        # Standard animation for all other states
+        else:
+            self.animation_timer += 1
+            if self.animation_timer >= frames_per_update:
+                previous_frame = self.current_frame
+                self.current_frame = (self.current_frame + 1) % len(self.animations[self.state])  # Cycle through frames
+                self.animation_timer = 0  # Reset the timer
+
+    def move(self, keys, left_key, right_key, jump_key, defend_key):
+        """Delegate movement logic to `action.move`."""
+        move(self, keys, left_key, right_key, jump_key, defend_key)
+
+    def attack(self, opponent):
+        """Delegate attack logic to `action.attack`."""
+        attack(self, opponent)
+
+    def apply_gravity(self):
+        self.velocity_y += GRAVITY
+        self.rect.y += self.velocity_y
+
+    def check_collision_with_platforms(self, platforms):
+        """Check for collision with platforms and handle landing."""
+        self.on_platform = False
+        for platform in platforms:
+            # Check if the player lands on a platform
+            if self.rect.colliderect(platform) and self.velocity_y >= 0:
+                if abs(self.rect.bottom - platform.top) <= max(10, abs(self.velocity_y)):
+                    # Snap the player to the platform
+                    self.rect.bottom = platform.top
+                    self.velocity_y = 0
+                    self.is_jumping = False
+                    self.on_platform = True
+                    self.jump_count = 0  # Reset double jump count
+
+                    # Update the state ONLY if landing after a jump
+                    if self.state == "jump":
+                        if not (keys := pygame.key.get_pressed())[pygame.K_a] and not keys[pygame.K_d]:
+                            new_state = "idle"
                         else:
-                            self.player_pos.x -= force_x
-                    else:
-                        if player.facing == 'left':
-                            self.player_pos.x -= force_x
-                        else:
-                            self.player_pos.x += force_x
-                self.x_vel = self.x_vel - 1
+                            new_state = "run"
 
-    def check_player_hit(self, attacker):
-        if self.is_hit:
-            if self.x_vel == 0:
-                self.is_hit = False
-                self.x_mass = 1
-                self.x_vel = 15
-                self.hit_count = 0
-            else:
-                self.hit_count += 1
-                force_x = ((1 / 2) * self.x_mass * self.x_vel ** 2) * .7
-                if 0 < self.player_pos.x < 1215:
-                    if attacker.facing == 'left':
-                        self.player_pos.x -= force_x
-                    else:
-                        self.player_pos.x += force_x
-                self.x_vel = self.x_vel - 1
+                        # Only reset the animation frame if the state actually changes
+                        if self.state != new_state:
+                            print(f"State changed from {self.state} to {new_state} after landing.")
+                            self.state = new_state
+                            self.current_frame = 0
 
-    def protect(self):
-        self.last_action = "protecting"
-        self.is_protecting = True
-        self.protect_count += 1
-        if self.protect_count < 10:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/protect/protect1.png")
-            else:
-                self.update_image(f"images/{self.folder}/protect/protect1rev.png")
-        else:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/protect/protect2.png")
-            else:
-                self.update_image(f"images/{self.folder}/protect/protect2rev.png")
+                    break
 
-    def jump(self):
-        if self.is_double_jump == 0 and self.attacking == False and self.is_protecting == False:
-            if self.is_double_jump_possible and self.is_jump:
-                self.is_double_jump += 1
-            else:
-                self.last_action = "jumping"
-                self.is_jump = True
+    def draw(self, screen):
+        """Render the current frame of the player's animation."""
+        if self.state not in self.animations:
+            self.state = "idle"
 
-    def check_on_platform(self, bg):
-        on_plat = True
-        is_on_main = False
-        for ground in bg.ground_objects:
-            if ground.is_main_ground:
-                if self.rect.x + self.rect.width < ground.rect:
-                    if ground.is_main_ground:
-                        is_on_main = True
-        return on_plat
+        frame = self.animations[self.state][self.current_frame]
+        if self.flip:
+            frame = pygame.transform.flip(frame, True, False)  # Flip horizontally if needed
 
-    def gravity(self, bg):
-        if not self.is_jump:
-            if not self.check_on_platform(bg):
-                print('should fall')
+        # Draw the current animation frame
+        screen.blit(frame, (self.rect.x, self.rect.y))
 
+    def draw_health_bar(self, screen, x, y, border_color=(0, 0, 0), bg_color=(255, 0, 0), fg_color=(0, 255, 0)):
+        """
+        Draws an improved, larger health bar with a border, background, and foreground.
 
+        Args:
+            screen: Pygame surface to draw on.
+            x: X-coordinate of the health bar.
+            y: Y-coordinate of the health bar.
+            border_color: Color of the border (default black).
+            bg_color: Background color for the health bar (default red).
+            fg_color: Foreground color for the health bar (default green).
+        """
+        bar_width = 300  # Bigger width for the health bar
+        bar_height = 40  # Bigger height for the health bar
+        border_thickness = 5  # Thicker border
 
-    def move_left(self, dt):
-        if self.is_protecting == False or self.is_jump:
-            self.last_action = "running-left"
-            self.facing = 'left'
-            if self.player_pos.x > 0:
-                self.player_pos.x -= 400 * dt
-            self.run_left()
+        # Draw the border
+        pygame.draw.rect(screen, border_color, (x - border_thickness, y - border_thickness, 
+                                                bar_width + 2 * border_thickness, bar_height + 2 * border_thickness))
 
-    def move_right(self, dt):
-        if self.is_protecting == False or self.is_jump:
-            self.last_action = "running-right"
-            self.facing = 'right'
-            if self.player_pos.x < 1215:
-                self.player_pos.x += 400 * dt
-            self.run_right()
+        # Draw the background (red part)
+        pygame.draw.rect(screen, bg_color, (x, y, bar_width, bar_height))
 
-    def special_attack(self):
-        print(f'{self.name} doing special attack')
+        # Calculate current health width
+        current_health_width = max(0, (self.health / 100) * bar_width)
 
-    def update_image(self, image):
-        self.avatar = image
+        # Draw the foreground (green part)
+        pygame.draw.rect(screen, fg_color, (x, y, current_health_width, bar_height))
 
-    def run_right(self):
-        if self.last_action == "running-right" and self.is_jump == False and self.is_hit == False:
-            self.counter += 1
-            if 0 < self.counter < 7.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run1.png")
-            elif 7.5 <= self.counter < 15:
-                self.update_image(f"images/{self.folder}/runAnimation/run2.png")
-            elif 15 <= self.counter < 22.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run3.png")
-            elif 22.5 <= self.counter < 30:
-                self.update_image(f"images/{self.folder}/runAnimation/run4.png")
-            elif 30 <= self.counter < 37.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run5.png")
-            elif 37.5 <= self.counter < 45:
-                self.update_image(f"images/{self.folder}/runAnimation/run6.png")
-            elif 45 <= self.counter < 52.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run7.png")
-            else:
-                self.update_image(f"images/{self.folder}/runAnimation/run8.png")
-                self.counter = 0
-        else:
-            self.counter = 0
-
-    def run_left(self):
-        if self.last_action == "running-left" and self.is_jump == False and self.is_hit == False:
-            self.counter += 1
-            if 0 < self.counter < 7.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run1rev.png")
-            elif 7.5 <= self.counter < 15:
-                self.update_image(f"images/{self.folder}/runAnimation/run2rev.png")
-            elif 15 <= self.counter < 22.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run3rev.png")
-            elif 22.5 <= self.counter < 30:
-                self.update_image(f"images/{self.folder}/runAnimation/run4rev.png")
-            elif 30 <= self.counter < 37.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run5rev.png")
-            elif 37.5 <= self.counter < 45:
-                self.update_image(f"images/{self.folder}/runAnimation/run6rev.png")
-            elif 45 <= self.counter < 52.5:
-                self.update_image(f"images/{self.folder}/runAnimation/run7rev.png")
-            else:
-                self.update_image(f"images/{self.folder}/runAnimation/run8rev.png")
-                self.counter = 0
-        else:
-            self.counter = 0
-
-    def do_jump_animation(self):
-        if 13 <= self.vel <= 15:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump1.png")
-            else:
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump1rev.png")
-        elif 11 <= self.vel <= 13:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump2.png")
-            else:
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump2rev.png")
-        elif 0 <= self.vel <= 11:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump4.png")
-            else:
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump3rev.png")
-        elif -2 <= self.vel <= 0:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump4.png")
-            else:
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump4rev.png")
-        elif -9 <= self.vel <= -2:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump5.png")
-            else:
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump5rev.png")
-        elif -14 <= self.vel <= -9:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump6.png")
-            else:
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump6rev.png")
-        else:
-            if self.facing == 'right':
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump7.png")
-            else:
-                self.update_image(f"images/{self.folder}/jumpAnimation/jump7rev.png")
-
-    def check_player_attack(self):
-        if self.attacking and self.is_hit == False:
-            self.attack_count += 1
-            if self.attack_count < 15:
-                if self.facing == 'right':
-                    self.update_image(f"images/{self.folder}/attack/attack1.png")
-                else:
-                    self.update_image(f"images/{self.folder}/attack/attack1rev.png")
-            elif self.attack_count <= 30:
-                if self.facing == 'right':
-                    self.update_image(f"images/{self.folder}/attack/attack2.png")
-                else:
-                    self.update_image(f"images/{self.folder}/attack/attack2rev.png")
-            elif self.attack_count <= 45:
-                if self.facing == 'right':
-                    self.update_image(f"images/{self.folder}/attack/attack3.png")
-                else:
-                    self.update_image(f"images/{self.folder}/attack/attack3rev.png")
-            else:
-                if self.facing == 'right':
-                    self.update_image(f"images/{self.folder}/default.png")
-                else:
-                    self.update_image(f"images/{self.folder}/reverse.png")
-                self.attacking = False
-                self.attack_count = 0
-
-    def check_player_jump(self, bg):
-        jump_stop = False
-        if self.is_jump and self.is_hit == False:
-            if self.is_double_jump == 1:
-                self.is_double_jump += 1
-                self.mass = 1
-                self.vel = 15
-                self.jump_count = 0
-            for ground in bg.ground_objects:
-                if pygame.Rect.colliderect(self.rect, ground.rect) and self.jump_count != 0 and self.vel < 0:
-                    if self.player_pos.y + self.rect.height <= ground.rect.y + ground.rect.height:
-                        self.player_pos.y = ground.rect.y - self.rect.height
-                        self.is_jump = False
-                        self.is_double_jump = 0
-                        self.is_double_jump_possible = False
-                        self.mass = 1
-                        self.vel = 15
-                        self.jump_count = 0
-                        jump_stop = True
-            if not jump_stop:
-                self.jump_count += 1
-                if self.vel < 0:
-                    self.mass = -1
-                force = ((1 / 2) * self.mass * self.vel ** 2) * .2
-                self.player_pos.y -= force
-                self.vel = self.vel - .5
-        self.do_jump_animation()
-
-    def update_to_idle(self):
-        if ((self.last_action == "still" or self.last_action == "jumping") and not self.is_jump) or (self.last_action == "protecting" and not self.is_protecting):
-            if self.facing == 'left':
-                self.update_image(f"images/{self.folder}/reverse.png")
-            else:
-                self.update_image(f"images/{self.folder}/default.png")
-
-    def is_doing_nothing(self):
-        if self.is_protecting == False and self.is_jump == False and self.attacking == False:
-            return True
-        else:
-            return False
-
+        # Add health percentage text
+        font = pygame.font.SysFont("Arial", 28, bold=True)  # Bigger, bold font
+        health_text = font.render(f"{self.health:.0f}/100", True, (255, 255, 255))  # White text
+        screen.blit(health_text, (x + bar_width // 2 - health_text.get_width() // 2, y + bar_height // 2 - health_text.get_height() // 2))

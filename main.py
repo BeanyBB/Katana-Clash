@@ -1,190 +1,325 @@
-import os
+# main.py
+
 import pygame
+import sys
+from settings import (
+    SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, GRAY, BLUE, RED, GREEN, FPS,
+    GROUND_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT
+)
 from player import Player
+from utils import draw_text, draw_winner
+
+background_img = pygame.image.load("./images/Background.png")
+ground_img = pygame.image.load("./images/ground1.png")
+platform_img = pygame.image.load("./images/ground2.png")
+
+background_img = pygame.transform.scale(background_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+ground_img = pygame.transform.scale(ground_img, (SCREEN_WIDTH, GROUND_HEIGHT))
+platform_img = pygame.transform.scale(platform_img, (PLATFORM_WIDTH, PLATFORM_HEIGHT))
+
+# Menu assets
+menu_background_img = pygame.image.load("./images/mainMenu.jpg")
+menu_logo_img = pygame.image.load("./images/logo.png")
+menu_prompt_img = pygame.image.load("./images/space.png")
+
+# Scale menu images to fit the screen
+menu_background_img = pygame.transform.scale(menu_background_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
+menu_logo_img = pygame.transform.scale(menu_logo_img, (600, 150))  # Adjust size as needed
+menu_prompt_img = pygame.transform.scale(menu_prompt_img, (400, 50))  # Adjust size as needed
 
 
-class Ground:
-    def __init__(self, image, pos, is_main_ground=False):
-        pygame.sprite.Sprite.__init__(self)  # call Sprite initializer
-        self.image = pygame.image.load(image)
-        self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = pos
-        self.is_main_ground = is_main_ground
-        if self.is_main_ground:
-            self.rect.left = (pygame.display.get_surface().get_width() / 2) - (self.rect.width / 2)
+# Initialize PyGame
+pygame.init()
 
+def controls_page():
+    """Displays the controls page."""
+    controls_bg_color = (30, 30, 30)  # Dark grey background for the controls page
+    title_color = (255, 255, 255)  # White for control titles
+    value_color = (50, 200, 50)  # Green for control values
 
-class Background(pygame.sprite.Sprite):
-    def __init__(self, image_file, location, ground_objects):
-        pygame.sprite.Sprite.__init__(self)  # call Sprite initializer
-        self.image = pygame.image.load(image_file)
-        self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = location
-        self.ground_objects = ground_objects
+    try:
+        controls_title_font = pygame.font.Font("./fonts/EdoSZ.ttf", 40)  # Font for control titles
+        controls_value_font = pygame.font.Font("./fonts/EdoSZ.ttf", 40)  # Font for control values
+    except FileNotFoundError:
+        controls_title_font = pygame.font.SysFont("Arial", 40)  # Fallback title font
+        controls_value_font = pygame.font.SysFont("Arial", 40)  # Fallback value font
 
-    def show_environment(self, screen):
-        screen.blit(self.image, self.rect)
-        for ground in self.ground_objects:
-            screen.blit(ground.image, ground.rect)
+    controls_text = [
+        ("Player 1 Controls", ""),
+        ("Move Left:", "A"),
+        ("Move Right:", "D"),
+        ("Jump:", "W"),
+        ("Attack:", "Space"),
+        ("Defend:", "E"),
+        ("", ""),
+        ("Player 2 Controls", ""),
+        ("Move Left:", "Left Arrow"),
+        ("Move Right:", "Right Arrow"),
+        ("Jump:", "Up Arrow"),
+        ("Attack:", "Enter"),
+        ("Defend:", "Left Shift"),
+        ("", ""),
+        ("Press ESC to return to the main menu.", ""),
+    ]
 
-
-def game_loop(screen, clock, running, dt):
-    platforms = pygame.sprite.Group()
-    ground = Ground("images/ground1.png", [0, 600], True)
-    up_ground_1 = Ground("images/ground2.png", [200, 250])
-    up_ground_2 = Ground("images/ground2.png", [800, 300])
-    bg = Background("images/background.png", [0, 0], [ground, up_ground_1, up_ground_2])
-    player1 = Player("commander", screen, pygame.Vector2(screen.get_width() / 3, 0),
-                     [screen.get_width() / 3, 372], ground)
-    player2 = Player('samurai', screen, pygame.Vector2(screen.get_width() / 1.5, 0),
-                     [screen.get_width() / 1.5, 430], ground)
-    all_players = [player1, player2]
-    display1 = Player("commander", screen, pygame.Vector2(0, 372), [0, 372], ground)
-    display2 = Player('samurai', screen, pygame.Vector2(1215, 430), [1215, 430], ground)
-    main_menu = Background("images/mainMenu.jpg", [0, 0], [])
-    green = (0, 255, 0)
-    blue = (0, 0, 128)
-    font = pygame.font.Font('freesansbold.ttf', 32)
-    game_on = False
-    game_over_count = 0
-    logo = pygame.image.load("images/logo.png")
-    space = pygame.image.load("images/space.png")
-
+    running = True
     while running:
-        if game_on:
-            bg.show_environment(screen)
-            # poll for events
-            # pygame.QUIT event means the user clicked X to close your window
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                elif event.type == pygame.KEYUP:
-                    if event.key == pygame.K_w:
-                        if player1.is_double_jump == 0:
-                            player1.is_double_jump_possible = True
-                    if event.key == pygame.K_i:
-                        if player2.is_double_jump == 0:
-                            player2.is_double_jump_possible = True
-                    if event.key == pygame.K_e:
-                        player1.is_protecting = False
-                        player1.protect_count = 0
-                    if event.key == pygame.K_o:
-                        player2.is_protecting = False
-                        player2.protect_count = 0
-                    if event.key == pygame.K_d and player1.is_doing_nothing():
-                        player1.last_action = 'still'
-                        player1.counter = 0
-                        player1.update_image(f"images/{player1.folder}/default.png")
-                    if event.key == pygame.K_a and player1.is_doing_nothing():
-                        player1.last_action = 'still'
-                        player1.counter = 0
-                        player1.update_image(f"images/{player1.folder}/reverse.png")
-                    if event.key == pygame.K_l and player2.is_doing_nothing():
-                        player2.last_action = 'still'
-                        player2.counter = 0
-                        player2.update_image(f"images/{player2.folder}/default.png")
-                    if event.key == pygame.K_j and player2.is_doing_nothing():
-                        player2.last_action = 'still'
-                        player2.counter = 0
-                        player2.update_image(f"images/{player2.folder}/reverse.png")
+        # Background color
+        screen.fill(controls_bg_color)
 
-            text = font.render(f'player1: {player1.health}   player2: {player2.health}', True, green, blue)
-            textRect = text.get_rect()
-            textRect.center = (1366 / 2, 50)
+        # Render controls text
+        x_padding_title = 50  # Left padding for titles
+        x_padding_value = 300  # Left padding for values
+        y_offset = 100  # Vertical starting position
+        line_spacing = 50  # Spacing between lines
 
-            for player in all_players:
-                player.show_player()
-                player.check_player_jump(bg)
-                player.check_player_attack()
-                player.update_to_idle()
-                # player.gravity(bg)
-                if player.health <= 0:
-                    game_over_count += 1
-                    if player == player2:
-                        winner = 'player1'
-                    else:
-                        winner = 'player2'
-                    text = font.render(f'GAME OVER     WINNER --> {winner}', True, green, blue)
-                    if game_over_count == 300:
-                        game_on = False
+        for title, value in controls_text:
+            if title:  # Render the title
+                rendered_title = controls_title_font.render(title, True, title_color)
+                screen.blit(rendered_title, (x_padding_title, y_offset))
 
-            screen.blit(text, textRect)
+            if value:  # Render the corresponding value
+                rendered_value = controls_value_font.render(value, True, value_color)
+                screen.blit(rendered_value, (x_padding_value, y_offset))
 
-            player1.check_player_hit(player2)
-            player2.check_player_hit(player1)
-            player1.protect_knockback(player2)
-            player2.protect_knockback(player1)
+            y_offset += line_spacing  # Move down for the next line
 
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_a]:
-                if player1.attacking == False or player1.is_jump:
-                    player1.move_left(dt)
-            if keys[pygame.K_d]:
-                if player1.attacking == False or player1.is_jump:
-                    player1.move_right(dt)
-            if keys[pygame.K_l]:
-                if player2.attacking == False or player2.is_jump:
-                    player2.move_right(dt)
-            if keys[pygame.K_j]:
-                if player2.attacking == False or player2.is_jump:
-                    player2.move_left(dt)
-            if keys[pygame.K_w]:
-                player1.jump()
-            if keys[pygame.K_i]:
-                player2.jump()
-            if keys[pygame.K_k]:
-                player2.attack(all_players)
-            if keys[pygame.K_s]:
-                player1.attack(all_players)
-            if keys[pygame.K_e]:
-                player1.protect()
-            if keys[pygame.K_o]:
-                player2.protect()
-
-
-        else:
-            screen.blit(main_menu.image, main_menu.rect)
-            screen.blit(logo, (200, 50))
-            player1.re_new(f"images/{player1.folder}/default.png")
-            player2.re_new(f"images/{player2.folder}/reverse.png")
-            display1.show_player()
-            display2.show_player()
-            if display1.counter <= 50:
-                display1.move_right(dt)
-            if display2.counter <= 50:
-                display2.move_left(dt)
-            if display2.counter >= 50 and display1.counter >= 50:
-                screen.blit(space, (575, 400))
-            game_over_count = 0
-
-            keys = pygame.key.get_pressed()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-            if keys[pygame.K_SPACE]:
-                game_on = True
-            if keys[pygame.K_ESCAPE]:
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:  # Quit the game
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:  # Return to the main menu
                 running = False
 
-        # flip() the display to put your work on screen
+        # Update the display
         pygame.display.flip()
-
-        # limits FPS to 60
-        # dt is delta time in seconds since last frame, used for framerate-
-        # independent physics.
-        dt = clock.tick(60) / 1000
-
-    pygame.quit()
+        clock.tick(FPS)
 
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((1386, 780))
-    clock = pygame.time.Clock()
+
+def main_menu():
+    """Main menu screen with characters running in from the sides."""
+    # Button colors and text styles
+    start_button_color = (34, 87, 51)  # Dark greenish color
+    start_hover_color = (47, 120, 71)  # Slightly brighter green for hover
+    quit_button_color = (150, 40, 40)  # Dark reddish color
+    quit_hover_color = (200, 60, 60)  # Slightly brighter red for hover
+    controls_button_color = (100, 100, 100)  # Grey color for controls button
+    controls_hover_color = (140, 140, 140)  # Slightly lighter grey for hover
+    text_color = (255, 255, 255)  # White text
+
+    # Button dimensions
+    start_button_width, start_button_height = 350, 120
+    start_button_x = (SCREEN_WIDTH - start_button_width) // 2
+    start_button_y = 500  # Positioned lower on the screen
+
+    quit_button_width, quit_button_height = 150, 50
+    quit_button_x = SCREEN_WIDTH - quit_button_width - 20  # 20px padding from the right
+    quit_button_y = 20  # Positioned near the top
+
+    controls_button_width, controls_button_height = 200, 50
+    controls_button_x = 20  # 20px padding from the left
+    controls_button_y = 20  # Positioned near the top
+
+    # Load fonts
+    try:
+        button_font = pygame.font.Font("./fonts/EdoSZ.ttf", 60)  # Custom samurai-style font
+        small_button_font = pygame.font.Font("./fonts/EdoSZ.ttf", 40)  # Smaller font for quit and controls buttons
+    except FileNotFoundError:
+        button_font = pygame.font.SysFont("Arial", 60)  # Fallback font
+        small_button_font = pygame.font.SysFont("Arial", 40)
+
+    # Positions and states for the characters
+    player1_x = -PLAYER_WIDTH  # Off-screen to the left
+    player2_x = SCREEN_WIDTH  # Off-screen to the right
+    player_y = SCREEN_HEIGHT - GROUND_HEIGHT - PLAYER_HEIGHT
+    stop_distance = 200  # Distance from the screen center where they stop
+    player1_target = SCREEN_WIDTH // 2 - stop_distance - PLAYER_WIDTH
+    player2_target = SCREEN_WIDTH // 2 + stop_distance
+
+    player_speed = 10  # Speed at which the characters move
+    players_stopped = False  # Flag to indicate if both players have stopped
+
+    while True:
+        # Render the menu background
+        screen.blit(menu_background_img, (0, 0))
+
+        # Draw the logo
+        bigger_logo = pygame.transform.scale(menu_logo_img, (900, 250))  # Make the logo larger
+        screen.blit(bigger_logo, ((SCREEN_WIDTH - bigger_logo.get_width()) // 2, 150))  # Center the logo
+
+        # Character running animation
+        if not players_stopped:
+            if player1_x < player1_target:
+                player1_x += player_speed
+            if player2_x > player2_target:
+                player2_x -= player_speed
+            if player1_x >= player1_target and player2_x <= player2_target:
+                players_stopped = True  # Both players have reached their target positions
+
+        # Draw players
+        screen.blit(player1.animations["run"][player1.current_frame], (player1_x, player_y))
+        screen.blit(pygame.transform.flip(player2.animations["run"][player2.current_frame], True, False), (player2_x, player_y))
+
+        # Update player animation frames for running
+        player1.update_animation(fps=FPS)
+        player2.update_animation(fps=FPS)
+
+        # --- Start Button ---
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        is_hovering_start = (
+            start_button_x <= mouse_x <= start_button_x + start_button_width
+            and start_button_y <= mouse_y <= start_button_y + start_button_height
+        )
+
+        # Draw Start button with hover effect
+        shadow_color = (25, 65, 39)
+        pygame.draw.rect(screen, shadow_color, (start_button_x + 5, start_button_y + 5, start_button_width, start_button_height), border_radius=20)
+        pygame.draw.rect(screen, start_hover_color if is_hovering_start else start_button_color, (start_button_x, start_button_y, start_button_width, start_button_height), border_radius=20)
+
+        # Render Start button text
+        start_button_text = button_font.render("Start Game", True, text_color)
+        start_text_x = start_button_x + (start_button_width - start_button_text.get_width()) // 2
+        start_text_y = start_button_y + (start_button_height - start_button_text.get_height()) // 2
+        screen.blit(start_button_text, (start_text_x, start_text_y))
+
+        # --- Quit Button ---
+        is_hovering_quit = (
+            quit_button_x <= mouse_x <= quit_button_x + quit_button_width
+            and quit_button_y <= mouse_y <= quit_button_y + quit_button_height
+        )
+
+        # Draw Quit button with hover effect
+        pygame.draw.rect(screen, quit_hover_color if is_hovering_quit else quit_button_color, (quit_button_x, quit_button_y, quit_button_width, quit_button_height), border_radius=10)
+
+        # Render Quit button text
+        quit_button_text = small_button_font.render("Quit", True, text_color)
+        quit_text_x = quit_button_x + (quit_button_width - quit_button_text.get_width()) // 2
+        quit_text_y = quit_button_y + (quit_button_height - quit_button_text.get_height()) // 2
+        screen.blit(quit_button_text, (quit_text_x, quit_text_y))
+
+        # --- Controls Button ---
+        is_hovering_controls = (
+            controls_button_x <= mouse_x <= controls_button_x + controls_button_width
+            and controls_button_y <= mouse_y <= controls_button_y + controls_button_height
+        )
+
+        # Draw Controls button with hover effect
+        pygame.draw.rect(screen, controls_hover_color if is_hovering_controls else controls_button_color, (controls_button_x, controls_button_y, controls_button_width, controls_button_height), border_radius=10)
+
+        # Render Controls button text
+        controls_button_text = small_button_font.render("Controls", True, text_color)
+        controls_text_x = controls_button_x + (controls_button_width - controls_button_text.get_width()) // 2
+        controls_text_y = controls_button_y + (controls_button_height - controls_button_text.get_height()) // 2
+        screen.blit(controls_button_text, (controls_text_x, controls_text_y))
+
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:  # Quit the game
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if is_hovering_start and players_stopped:  # Start the game
+                    return  # Break out of the menu loop and start the game
+                if is_hovering_quit:  # Quit the game
+                    pygame.quit()
+                    sys.exit()
+                if is_hovering_controls:  # Open the controls page
+                    controls_page()
+
+        # Update the display
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+
+
+
+
+# Fullscreen setup
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)  # Fullscreen mode
+pygame.display.set_caption("2D Fighting Game")
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("Arial", 30)
+
+# Ground and platforms
+platforms = [
+    {"rect": pygame.Rect(0, SCREEN_HEIGHT - GROUND_HEIGHT, SCREEN_WIDTH, GROUND_HEIGHT), "img": ground_img},  # Ground
+    {"rect": pygame.Rect(SCREEN_WIDTH // 4, SCREEN_HEIGHT - (250 + GROUND_HEIGHT), PLATFORM_WIDTH, PLATFORM_HEIGHT), "img": platform_img},  # Left platform
+    {"rect": pygame.Rect((SCREEN_WIDTH * 3) // 4 - PLATFORM_WIDTH, SCREEN_HEIGHT - (350 + GROUND_HEIGHT), PLATFORM_WIDTH, PLATFORM_HEIGHT), "img": platform_img},  # Right platform
+]
+
+# Players
+player1 = Player(
+    SCREEN_WIDTH // 4, SCREEN_HEIGHT - (GROUND_HEIGHT + (PLAYER_HEIGHT)), BLUE, "./images/commander"
+)
+player2 = Player(
+    (SCREEN_WIDTH * 3) // 4, SCREEN_HEIGHT - (GROUND_HEIGHT + PLAYER_HEIGHT), RED, "./images/samurai"
+)
+players = [player1, player2]
+
+# Main game loop
+def main_game():
     running = True
-    dt = 0
-    game_loop(screen, clock, running, dt)
+
+    while running:
+        screen.blit(background_img, (0, 0))
+
+        keys = pygame.key.get_pressed()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # dynamic layer player appearance
+        players.sort(key=lambda obj: obj.rect.bottom)
+
+        # Player movement
+        player1.move(keys, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_e)  # Player 1: A/D to move, W to jump
+        player2.move(keys, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_RSHIFT)  # Player 2: Arrow keys to move and jump
+
+        # Gravity
+        player1.apply_gravity()
+        player2.apply_gravity()
+
+        # Platform collisions
+        player1.check_collision_with_platforms([platform["rect"] for platform in platforms])
+        player2.check_collision_with_platforms([platform["rect"] for platform in platforms])
+
+        # Attacks
+        if keys[pygame.K_SPACE]:  # Player 1 attack
+            player1.attack(player2)
+        if keys[pygame.K_RETURN]:  # Player 2 attack
+            player2.attack(player1)
+
+        player1.update_animation()
+        player2.update_animation()
+
+        # Win condition
+        if player1.health <= 0:
+            draw_winner(screen, font, "Player 2 Wins!")
+            return
+        if player2.health <= 0:
+            draw_winner(screen, font, "Player 1 Wins!")
+            return
+
+        # Draw platforms
+        for platform in platforms:
+            screen.blit(platform["img"], (platform["rect"].x, platform["rect"].y))
+
+        # Draw players and health bars
+        for player in players:
+            player.draw(screen)
+        player1.draw_health_bar(screen, 30, 30)
+        player2.draw_health_bar(screen, SCREEN_WIDTH - 330, 30)
+
+        # Update the display
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    while True:
+        main_menu()
+        main_game()
