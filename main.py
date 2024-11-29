@@ -1,35 +1,41 @@
 # main.py
 
 import pygame
-import sys
+import sys, os
 from settings import (
     SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, GRAY, BLUE, RED, GREEN, FPS,
     GROUND_HEIGHT, PLATFORM_WIDTH, PLATFORM_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT
 )
 from player import Player
-from utils import draw_text, draw_winner
+from utils import draw_winner
+import asyncio
 
-background_img = pygame.image.load("./images/Background.png")
-ground_img = pygame.image.load("./images/ground1.png")
-platform_img = pygame.image.load("./images/ground2.png")
+pygame.init()
+
+def resource_path(relative_path):
+    """Get the absolute path to the resource."""
+    # When running in a PyInstaller bundle, _MEIPASS stores the temp directory where assets are extracted
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
+
+
+background_img = pygame.image.load(resource_path("./images/Background.png"))
+ground_img = pygame.image.load(resource_path("./images/ground1.png"))
+platform_img = pygame.image.load(resource_path("./images/ground2.png"))
 
 background_img = pygame.transform.scale(background_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
 ground_img = pygame.transform.scale(ground_img, (SCREEN_WIDTH, GROUND_HEIGHT))
 platform_img = pygame.transform.scale(platform_img, (PLATFORM_WIDTH, PLATFORM_HEIGHT))
 
 # Menu assets
-menu_background_img = pygame.image.load("./images/mainMenu.jpg")
-menu_logo_img = pygame.image.load("./images/logo.png")
-menu_prompt_img = pygame.image.load("./images/space.png")
+menu_background_img = pygame.image.load(resource_path("./images/mainMenu.jpg"))
+menu_logo_img = pygame.image.load(resource_path("./images/logo.png"))
+menu_prompt_img = pygame.image.load(resource_path("./images/space.png"))
 
 # Scale menu images to fit the screen
 menu_background_img = pygame.transform.scale(menu_background_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
 menu_logo_img = pygame.transform.scale(menu_logo_img, (600, 150))  # Adjust size as needed
 menu_prompt_img = pygame.transform.scale(menu_prompt_img, (400, 50))  # Adjust size as needed
-
-
-# Initialize PyGame
-pygame.init()
 
 def controls_page():
     """Displays the controls page."""
@@ -38,8 +44,8 @@ def controls_page():
     value_color = (50, 200, 50)  # Green for control values
 
     try:
-        controls_title_font = pygame.font.Font("./fonts/EdoSZ.ttf", 40)  # Font for control titles
-        controls_value_font = pygame.font.Font("./fonts/EdoSZ.ttf", 40)  # Font for control values
+        controls_title_font = pygame.font.Font(resource_path("./fonts/EdoSZ.ttf", 40))  # Font for control titles
+        controls_value_font = pygame.font.Font(resource_path("./fonts/EdoSZ.ttf", 40))  # Font for control values
     except FileNotFoundError:
         controls_title_font = pygame.font.SysFont("Arial", 40)  # Fallback title font
         controls_value_font = pygame.font.SysFont("Arial", 40)  # Fallback value font
@@ -110,7 +116,7 @@ def main_menu():
     text_color = (255, 255, 255)  # White text
 
     # Button dimensions
-    start_button_width, start_button_height = 350, 120
+    start_button_width, start_button_height = 500, 120
     start_button_x = (SCREEN_WIDTH - start_button_width) // 2
     start_button_y = 500  # Positioned lower on the screen
 
@@ -118,14 +124,14 @@ def main_menu():
     quit_button_x = SCREEN_WIDTH - quit_button_width - 20  # 20px padding from the right
     quit_button_y = 20  # Positioned near the top
 
-    controls_button_width, controls_button_height = 200, 50
+    controls_button_width, controls_button_height = 250, 50
     controls_button_x = 20  # 20px padding from the left
     controls_button_y = 20  # Positioned near the top
 
     # Load fonts
     try:
-        button_font = pygame.font.Font("./fonts/EdoSZ.ttf", 60)  # Custom samurai-style font
-        small_button_font = pygame.font.Font("./fonts/EdoSZ.ttf", 40)  # Smaller font for quit and controls buttons
+        button_font = pygame.font.Font("./fonts/Freedom-10eM.ttf", 60)  # Custom samurai-style font
+        small_button_font = pygame.font.Font("./fonts/Freedom-10eM.ttf", 40)  # Smaller font for quit and controls buttons
     except FileNotFoundError:
         button_font = pygame.font.SysFont("Arial", 60)  # Fallback font
         small_button_font = pygame.font.SysFont("Arial", 40)
@@ -330,8 +336,6 @@ def main_game():
         # Update the display
         pygame.display.flip()
         clock.tick(FPS)
-
-
 
 if __name__ == "__main__":
     while True:

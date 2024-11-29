@@ -1,8 +1,13 @@
 import pygame
-import os
+import os, sys
 from settings import PLAYER_WIDTH, PLAYER_HEIGHT, GRAVITY
 from action import move, attack
 
+def resource_path(relative_path):
+    """Get the absolute path to the resource."""
+    # When running in a PyInstaller bundle, _MEIPASS stores the temp directory where assets are extracted
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
 
 class Player:
     def __init__(self, x, y, color, image_folder, added_height=0):
@@ -25,14 +30,15 @@ class Player:
         # Load all animations
         self.animations = self.load_animations(image_folder)
 
+
     def load_animations(self, folder):
         """Load all animations from the specified folder."""
         animations = {
-            "idle": [pygame.image.load(os.path.join(folder, "default.png"))],
-            "run": [pygame.image.load(os.path.join(folder, "runAnimation", f"run{i}.png")) for i in range(1, 9)],
-            "jump": [pygame.image.load(os.path.join(folder, "jumpAnimation", f"jump{i}.png")) for i in range(1, 8)],
-            "attack": [pygame.image.load(os.path.join(folder, "attack", f"attack{i}.png")) for i in range(1, 4)],
-            "defend": [pygame.image.load(os.path.join(folder, "protect", f"protect{i}.png")) for i in range(1, 3)],
+            "idle": [pygame.image.load(resource_path(os.path.join(folder, "default.png")))],
+            "run": [pygame.image.load(resource_path(os.path.join(folder, "runAnimation", f"run{i}.png"))) for i in range(1, 9)],
+            "jump": [pygame.image.load(resource_path(os.path.join(folder, "jumpAnimation", f"jump{i}.png"))) for i in range(1, 8)],
+            "attack": [pygame.image.load(resource_path(os.path.join(folder, "attack", f"attack{i}.png"))) for i in range(1, 4)],
+            "defend": [pygame.image.load(resource_path(os.path.join(folder, "protect", f"protect{i}.png"))) for i in range(1, 3)],
         }
 
         # Scale all images to match PLAYER_WIDTH and PLAYER_HEIGHT
