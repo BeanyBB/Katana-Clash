@@ -261,6 +261,16 @@ players = [player1, player2]
 
 # Main game loop
 def main_game():
+    # Reset player states
+    player1.health = 100
+    player2.health = 100
+
+    # Reset player positions
+    player1.rect.x = SCREEN_WIDTH // 4
+    player1.rect.y = SCREEN_HEIGHT - (GROUND_HEIGHT + PLAYER_HEIGHT)
+    player2.rect.x = (SCREEN_WIDTH * 3) // 4
+    player2.rect.y = SCREEN_HEIGHT - (GROUND_HEIGHT + PLAYER_HEIGHT)
+
     running = True
 
     while running:
@@ -272,37 +282,40 @@ def main_game():
                 pygame.quit()
                 sys.exit()
 
-        # dynamic layer player appearance
+        # Sort players for dynamic layering
         players.sort(key=lambda obj: obj.rect.bottom)
 
         # Player movement
         player1.move(keys, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_e)  # Player 1: A/D to move, W to jump
         player2.move(keys, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_RSHIFT)  # Player 2: Arrow keys to move and jump
 
-        # Gravity
+        # Apply gravity
         player1.apply_gravity()
         player2.apply_gravity()
 
-        # Platform collisions
+        # Check collisions with platforms
         player1.check_collision_with_platforms([platform["rect"] for platform in platforms])
         player2.check_collision_with_platforms([platform["rect"] for platform in platforms])
 
-        # Attacks
+        # Player attacks
         if keys[pygame.K_SPACE]:  # Player 1 attack
             player1.attack(player2)
         if keys[pygame.K_RETURN]:  # Player 2 attack
             player2.attack(player1)
 
+        # Update animations
         player1.update_animation()
         player2.update_animation()
 
         # Win condition
         if player1.health <= 0:
             draw_winner(screen, font, "Player 2 Wins!")
-            return
+            pygame.time.delay(3000)  # Pause for 3 seconds
+            return  # Exit the game loop and return to the main menu
         if player2.health <= 0:
             draw_winner(screen, font, "Player 1 Wins!")
-            return
+            pygame.time.delay(3000)  # Pause for 3 seconds
+            return  # Exit the game loop and return to the main menu
 
         # Draw platforms
         for platform in platforms:
@@ -317,6 +330,7 @@ def main_game():
         # Update the display
         pygame.display.flip()
         clock.tick(FPS)
+
 
 
 if __name__ == "__main__":
