@@ -26,6 +26,7 @@ class Player:
         self.flip = False  # Whether the image should be flipped horizontally
         self.last_attack_time = 0  # Tracks the last time the player attacked (for cooldown)
         self.is_defending = False
+        self.input_allowed = False
 
         # Load all animations
         self.animations = self.load_animations(image_folder)

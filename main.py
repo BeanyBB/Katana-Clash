@@ -8,7 +8,8 @@ from settings import (
 )
 from player import Player
 from utils import draw_winner
-import asyncio
+from main_menu import main_menu
+from controls_page import controls_page
 
 pygame.init()
 
@@ -37,217 +38,11 @@ menu_background_img = pygame.transform.scale(menu_background_img, (SCREEN_WIDTH,
 menu_logo_img = pygame.transform.scale(menu_logo_img, (600, 150))  # Adjust size as needed
 menu_prompt_img = pygame.transform.scale(menu_prompt_img, (400, 50))  # Adjust size as needed
 
-def controls_page():
-    """Displays the controls page."""
-    controls_bg_color = (30, 30, 30)  # Dark grey background for the controls page
-    title_color = (255, 255, 255)  # White for control titles
-    value_color = (50, 200, 50)  # Green for control values
-
-    try:
-        controls_title_font = pygame.font.Font(resource_path("./fonts/EdoSZ.ttf", 40))  # Font for control titles
-        controls_value_font = pygame.font.Font(resource_path("./fonts/EdoSZ.ttf", 40))  # Font for control values
-    except FileNotFoundError:
-        controls_title_font = pygame.font.SysFont("Arial", 40)  # Fallback title font
-        controls_value_font = pygame.font.SysFont("Arial", 40)  # Fallback value font
-
-    controls_text = [
-        ("Player 1 Controls", ""),
-        ("Move Left:", "A"),
-        ("Move Right:", "D"),
-        ("Jump:", "W"),
-        ("Attack:", "Space"),
-        ("Defend:", "E"),
-        ("", ""),
-        ("Player 2 Controls", ""),
-        ("Move Left:", "Left Arrow"),
-        ("Move Right:", "Right Arrow"),
-        ("Jump:", "Up Arrow"),
-        ("Attack:", "Enter"),
-        ("Defend:", "Left Shift"),
-        ("", ""),
-        ("Press ESC to return to the main menu.", ""),
-    ]
-
-    running = True
-    while running:
-        # Background color
-        screen.fill(controls_bg_color)
-
-        # Render controls text
-        x_padding_title = 50  # Left padding for titles
-        x_padding_value = 300  # Left padding for values
-        y_offset = 100  # Vertical starting position
-        line_spacing = 50  # Spacing between lines
-
-        for title, value in controls_text:
-            if title:  # Render the title
-                rendered_title = controls_title_font.render(title, True, title_color)
-                screen.blit(rendered_title, (x_padding_title, y_offset))
-
-            if value:  # Render the corresponding value
-                rendered_value = controls_value_font.render(value, True, value_color)
-                screen.blit(rendered_value, (x_padding_value, y_offset))
-
-            y_offset += line_spacing  # Move down for the next line
-
-        # Event handling
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:  # Quit the game
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:  # Return to the main menu
-                running = False
-
-        # Update the display
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
-
-def main_menu():
-    """Main menu screen with characters running in from the sides."""
-    # Button colors and text styles
-    start_button_color = (34, 87, 51)  # Dark greenish color
-    start_hover_color = (47, 120, 71)  # Slightly brighter green for hover
-    quit_button_color = (150, 40, 40)  # Dark reddish color
-    quit_hover_color = (200, 60, 60)  # Slightly brighter red for hover
-    controls_button_color = (100, 100, 100)  # Grey color for controls button
-    controls_hover_color = (140, 140, 140)  # Slightly lighter grey for hover
-    text_color = (255, 255, 255)  # White text
-
-    # Button dimensions
-    start_button_width, start_button_height = 500, 120
-    start_button_x = (SCREEN_WIDTH - start_button_width) // 2
-    start_button_y = 500  # Positioned lower on the screen
-
-    quit_button_width, quit_button_height = 150, 50
-    quit_button_x = SCREEN_WIDTH - quit_button_width - 20  # 20px padding from the right
-    quit_button_y = 20  # Positioned near the top
-
-    controls_button_width, controls_button_height = 250, 50
-    controls_button_x = 20  # 20px padding from the left
-    controls_button_y = 20  # Positioned near the top
-
-    # Load fonts
-    try:
-        button_font = pygame.font.Font("./fonts/Freedom-10eM.ttf", 60)  # Custom samurai-style font
-        small_button_font = pygame.font.Font("./fonts/Freedom-10eM.ttf", 40)  # Smaller font for quit and controls buttons
-    except FileNotFoundError:
-        button_font = pygame.font.SysFont("Arial", 60)  # Fallback font
-        small_button_font = pygame.font.SysFont("Arial", 40)
-
-    # Positions and states for the characters
-    player1_x = -PLAYER_WIDTH  # Off-screen to the left
-    player2_x = SCREEN_WIDTH  # Off-screen to the right
-    player_y = SCREEN_HEIGHT - GROUND_HEIGHT - PLAYER_HEIGHT
-    stop_distance = 200  # Distance from the screen center where they stop
-    player1_target = SCREEN_WIDTH // 2 - stop_distance - PLAYER_WIDTH
-    player2_target = SCREEN_WIDTH // 2 + stop_distance
-
-    player_speed = 10  # Speed at which the characters move
-    players_stopped = False  # Flag to indicate if both players have stopped
-
-    while True:
-        # Render the menu background
-        screen.blit(menu_background_img, (0, 0))
-
-        # Draw the logo
-        bigger_logo = pygame.transform.scale(menu_logo_img, (900, 250))  # Make the logo larger
-        screen.blit(bigger_logo, ((SCREEN_WIDTH - bigger_logo.get_width()) // 2, 150))  # Center the logo
-
-        # Character running animation
-        if not players_stopped:
-            if player1_x < player1_target:
-                player1_x += player_speed
-            if player2_x > player2_target:
-                player2_x -= player_speed
-            if player1_x >= player1_target and player2_x <= player2_target:
-                players_stopped = True  # Both players have reached their target positions
-
-        # Draw players
-        screen.blit(player1.animations["run"][player1.current_frame], (player1_x, player_y))
-        screen.blit(pygame.transform.flip(player2.animations["run"][player2.current_frame], True, False), (player2_x, player_y))
-
-        # Update player animation frames for running
-        player1.update_animation(fps=FPS)
-        player2.update_animation(fps=FPS)
-
-        # --- Start Button ---
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        is_hovering_start = (
-            start_button_x <= mouse_x <= start_button_x + start_button_width
-            and start_button_y <= mouse_y <= start_button_y + start_button_height
-        )
-
-        # Draw Start button with hover effect
-        shadow_color = (25, 65, 39)
-        pygame.draw.rect(screen, shadow_color, (start_button_x + 5, start_button_y + 5, start_button_width, start_button_height), border_radius=20)
-        pygame.draw.rect(screen, start_hover_color if is_hovering_start else start_button_color, (start_button_x, start_button_y, start_button_width, start_button_height), border_radius=20)
-
-        # Render Start button text
-        start_button_text = button_font.render("Start Game", True, text_color)
-        start_text_x = start_button_x + (start_button_width - start_button_text.get_width()) // 2
-        start_text_y = start_button_y + (start_button_height - start_button_text.get_height()) // 2
-        screen.blit(start_button_text, (start_text_x, start_text_y))
-
-        # --- Quit Button ---
-        is_hovering_quit = (
-            quit_button_x <= mouse_x <= quit_button_x + quit_button_width
-            and quit_button_y <= mouse_y <= quit_button_y + quit_button_height
-        )
-
-        # Draw Quit button with hover effect
-        pygame.draw.rect(screen, quit_hover_color if is_hovering_quit else quit_button_color, (quit_button_x, quit_button_y, quit_button_width, quit_button_height), border_radius=10)
-
-        # Render Quit button text
-        quit_button_text = small_button_font.render("Quit", True, text_color)
-        quit_text_x = quit_button_x + (quit_button_width - quit_button_text.get_width()) // 2
-        quit_text_y = quit_button_y + (quit_button_height - quit_button_text.get_height()) // 2
-        screen.blit(quit_button_text, (quit_text_x, quit_text_y))
-
-        # --- Controls Button ---
-        is_hovering_controls = (
-            controls_button_x <= mouse_x <= controls_button_x + controls_button_width
-            and controls_button_y <= mouse_y <= controls_button_y + controls_button_height
-        )
-
-        # Draw Controls button with hover effect
-        pygame.draw.rect(screen, controls_hover_color if is_hovering_controls else controls_button_color, (controls_button_x, controls_button_y, controls_button_width, controls_button_height), border_radius=10)
-
-        # Render Controls button text
-        controls_button_text = small_button_font.render("Controls", True, text_color)
-        controls_text_x = controls_button_x + (controls_button_width - controls_button_text.get_width()) // 2
-        controls_text_y = controls_button_y + (controls_button_height - controls_button_text.get_height()) // 2
-        screen.blit(controls_button_text, (controls_text_x, controls_text_y))
-
-        # Event handling
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:  # Quit the game
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if is_hovering_start and players_stopped:  # Start the game
-                    return  # Break out of the menu loop and start the game
-                if is_hovering_quit:  # Quit the game
-                    pygame.quit()
-                    sys.exit()
-                if is_hovering_controls:  # Open the controls page
-                    controls_page()
-
-        # Update the display
-        pygame.display.flip()
-        clock.tick(FPS)
-
-
-
-
-
-
 # Fullscreen setup
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)  # Fullscreen mode
 pygame.display.set_caption("2D Fighting Game")
 clock = pygame.time.Clock()
-font = pygame.font.SysFont("Arial", 30)
+font = pygame.font.Font(resource_path("./fonts/Freedom-10eM.ttf"), 30)
 
 # Ground and platforms
 platforms = [
@@ -272,15 +67,92 @@ def main_game():
     player2.health = 100
 
     # Reset player positions
-    player1.rect.x = SCREEN_WIDTH // 4
-    player1.rect.y = SCREEN_HEIGHT - (GROUND_HEIGHT + PLAYER_HEIGHT)
-    player2.rect.x = (SCREEN_WIDTH * 3) // 4
-    player2.rect.y = SCREEN_HEIGHT - (GROUND_HEIGHT + PLAYER_HEIGHT)
+    player1.rect.x = 40
+    player1.rect.y = 0
+    player2.rect.x = SCREEN_WIDTH - (PLAYER_WIDTH + 40)
+    player2.rect.y = 0
+    player2.flip = True
+    player1.is_jumping = True
+    player2.is_jumping = True
+    player1.state = 'jump'
+    player2.state = 'jump'
+
+    # Disable input initially
+    player1.input_allowed = False
+    player2.input_allowed = False
+
+    # Load Fight image
+    fight_img = pygame.image.load(resource_path("./images/Fight.png"))
+    fight_img = pygame.transform.scale(fight_img, (800, 400))  # Scale as needed
+    fight_rect = fight_img.get_rect(center=(SCREEN_WIDTH // 2, -200))  # Start above the screen
+    # Alpha surface for fading effect
+    fight_surface = pygame.Surface(fight_img.get_size(), pygame.SRCALPHA)
+    fight_surface.blit(fight_img, (0, 0))
+    fight_alpha = 255  # Start fully opaque
+    fight_target_y = 300  # Final position (a little toward the top)
+    fight_speed = 40  # Initial speed
+    fight_animation_done = False
+    fight_display_timer = None  # Timer to track the 1-second delay
+
+    # Add a timer to re-enable input (in milliseconds)
+    input_enable_time = pygame.time.get_ticks() + 1500  # 1.5 seconds
+
+    # Button settings for Main Menu and Controls
+    menu_button_color = (100, 100, 100)  # Grey
+    menu_button_hover_color = (140, 140, 140)  # Light Grey
+    controls_button_color = (50, 50, 150)  # Dark Blue
+    controls_button_hover_color = (80, 80, 200)  # Light Blue
+
+    # Button dimensions
+    button_height = 50
+    menu_button_width = 220  # Increased by 20 pixels
+    controls_button_width = 200
+    menu_button_x = 30 + 300 + 20  # To the right of Player 1's health bar
+    menu_button_y = 30  # Same Y as Player 1's health bar
+    controls_button_x = SCREEN_WIDTH - 330 - controls_button_width - 20  # To the left of Player 2's health bar
+    controls_button_y = 30  # Same Y as Player 2's health bar
+    menu_button_text = font.render("Main Menu", True, (255, 255, 255))  # White text
+    controls_button_text = font.render("Controls", True, (255, 255, 255))  # White text
 
     running = True
+    paused_for_controls = False
 
     while running:
+        # Check if the game is paused for the controls page
+        if paused_for_controls:
+            controls_page(screen, clock, FPS, resource_path)  # Display the controls page
+            paused_for_controls = False  # Resume the game after escaping the controls page
+
         screen.blit(background_img, (0, 0))
+
+        # Enable input after a certain time
+        current_time = pygame.time.get_ticks()
+
+        # --- Fight Animation ---
+        if not fight_animation_done:
+            # Exponential speed decrease for "rolling" effect
+            if fight_rect.centery < fight_target_y:
+                fight_speed *= 0.95  # Slightly slower deceleration for quicker descent
+                fight_rect.centery += max(1, int(fight_speed))  # Prevent speed from hitting zero
+
+            # Add a delay after reaching the target position
+            if fight_rect.centery >= fight_target_y:
+                if fight_display_timer is None:  # Start the 1-second timer once the target is reached
+                    fight_display_timer = pygame.time.get_ticks()  # Get the current time
+                elif pygame.time.get_ticks() - fight_display_timer >= 1000:  # 1-second delay (1000 ms)
+                    fight_alpha -= 10  # Start fading out
+                    if fight_alpha <= 0:  # Animation is done
+                        fight_animation_done = True
+                        player1.input_allowed = True
+                        player2.input_allowed = True  # Enable input after fade
+
+            # Apply fading effect to the Fight image
+            fight_surface.set_alpha(fight_alpha)
+            screen.blit(fight_surface, fight_rect)
+
+        if current_time > input_enable_time:
+            player1.input_allowed = True
+            player2.input_allowed = True
 
         keys = pygame.key.get_pressed()
         for event in pygame.event.get():
@@ -288,12 +160,26 @@ def main_game():
                 pygame.quit()
                 sys.exit()
 
+            # Check for mouse input
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                # Main Menu button click
+                if menu_button_x <= mouse_x <= menu_button_x + menu_button_width and menu_button_y <= mouse_y <= menu_button_y + button_height:
+                    return  # Exit the game loop and return to the main menu
+
+                # Controls button click
+                if controls_button_x <= mouse_x <= controls_button_x + controls_button_width and controls_button_y <= mouse_y <= controls_button_y + button_height:
+                    paused_for_controls = True  # Pause the game and show the controls page
+
         # Sort players for dynamic layering
         players.sort(key=lambda obj: obj.rect.bottom)
 
-        # Player movement
-        player1.move(keys, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_e)  # Player 1: A/D to move, W to jump
-        player2.move(keys, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_RSHIFT)  # Player 2: Arrow keys to move and jump
+        # Player movement (only if input is allowed)
+        if player1.input_allowed:
+            player1.move(keys, pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s)  # Player 1: A/D to move, W to jump
+        if player2.input_allowed:
+            player2.move(keys, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN)  # Player 2: Arrow keys to move and jump
 
         # Apply gravity
         player1.apply_gravity()
@@ -315,12 +201,10 @@ def main_game():
 
         # Win condition
         if player1.health <= 0:
-            draw_winner(screen, font, "Player 2 Wins!")
-            pygame.time.delay(3000)  # Pause for 3 seconds
+            draw_winner(screen, font, "Player 2 Wins!", player2, background_img)
             return  # Exit the game loop and return to the main menu
         if player2.health <= 0:
-            draw_winner(screen, font, "Player 1 Wins!")
-            pygame.time.delay(3000)  # Pause for 3 seconds
+            draw_winner(screen, font, "Player 1 Wins!", player1, background_img)
             return  # Exit the game loop and return to the main menu
 
         # Draw platforms
@@ -330,14 +214,48 @@ def main_game():
         # Draw players and health bars
         for player in players:
             player.draw(screen)
-        player1.draw_health_bar(screen, 30, 30)
-        player2.draw_health_bar(screen, SCREEN_WIDTH - 330, 30)
+        player1.draw_health_bar(screen, 30, 30)  # Player 1 health bar
+        player2.draw_health_bar(screen, SCREEN_WIDTH - 330, 30)  # Player 2 health bar
+
+        # --- Main Menu Button ---
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        is_hovering_menu = menu_button_x <= mouse_x <= menu_button_x + menu_button_width and menu_button_y <= mouse_y <= menu_button_y + button_height
+
+        # Draw Main Menu button
+        pygame.draw.rect(
+            screen,
+            menu_button_hover_color if is_hovering_menu else menu_button_color,
+            (menu_button_x, menu_button_y, menu_button_width, button_height),
+            border_radius=10,
+        )
+        # Draw Main Menu button text
+        menu_text_x = menu_button_x + (menu_button_width - menu_button_text.get_width()) // 2
+        menu_text_y = menu_button_y + (button_height - menu_button_text.get_height()) // 2
+        screen.blit(menu_button_text, (menu_text_x, menu_text_y))
+
+        # --- Controls Button ---
+        is_hovering_controls = controls_button_x <= mouse_x <= controls_button_x + controls_button_width and controls_button_y <= mouse_y <= controls_button_y + button_height
+
+        # Draw Controls button
+        pygame.draw.rect(
+            screen,
+            controls_button_hover_color if is_hovering_controls else controls_button_color,
+            (controls_button_x, controls_button_y, controls_button_width, button_height),
+            border_radius=10,
+        )
+        # Draw Controls button text
+        controls_text_x = controls_button_x + (controls_button_width - controls_button_text.get_width()) // 2
+        controls_text_y = controls_button_y + (button_height - controls_button_text.get_height()) // 2
+        screen.blit(controls_button_text, (controls_text_x, controls_text_y))
 
         # Update the display
         pygame.display.flip()
         clock.tick(FPS)
 
+
+
+
 if __name__ == "__main__":
     while True:
-        main_menu()
+        main_menu(screen, clock, FPS, resource_path, menu_background_img, menu_logo_img, player1, player2)
         main_game()
